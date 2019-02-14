@@ -18,7 +18,7 @@ impl Rectangle {
         Rectangle {
             position: position.translation.vector,
             handle,
-            shape: graphics::Rectangle::new([1.0, 1.0, 1.0, 1.0]),
+            shape: graphics::Rectangle::new([rand::random(), rand::random(), rand::random(), 1.0]),
             width,
             height,
         }

@@ -17,7 +17,8 @@ impl Circle {
             let iso = world.collider(handle).unwrap().position();
             iso.translation.vector
         };
-        let shape = graphics::Ellipse::new([1.0, 1.0, 1.0, 1.0]).resolution(16);
+        let shape = graphics::Ellipse::new([rand::random(), rand::random(), rand::random(), 1.0])
+            .resolution(16);
         Circle {
             position,
             handle,
