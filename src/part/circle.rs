@@ -34,7 +34,12 @@ impl Circle {
     pub fn draw<G: Graphics>(&self, camera: &Camera, c: graphics::Context, g: &mut G) {
         let position = camera.to_global(&self.position);
         self.shape.draw(
-            [0.0, 0.0, self.radius, self.radius],
+            [
+                -self.radius,
+                -self.radius,
+                self.radius * 2.0,
+                self.radius * 2.0,
+            ],
             &graphics::DrawState::default(),
             c.trans(position.x, position.y)
                 .zoom(camera.zoom())
