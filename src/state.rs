@@ -118,9 +118,6 @@ impl State {
             Key::Minus | Key::NumPadMinus if pressed => {
                 self.camera.set_zoom(self.camera.zoom() * 3.0 / 4.0)
             }
-            Key::Space if pressed => {
-                println!("{:?}, {:?}", self.mouse_position, self.mouse_position_world)
-            }
             _ => {}
         }
     }
