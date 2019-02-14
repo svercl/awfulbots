@@ -2,7 +2,7 @@ use glutin_window::GlutinWindow;
 use glutin_window::OpenGL;
 use opengl_graphics::GlGraphics;
 use piston::event_loop::{EventLoop, EventSettings, Events};
-use piston::input::{Button, PressEvent, ReleaseEvent, RenderEvent, UpdateEvent};
+use piston::input::{Button, MouseCursorEvent, PressEvent, ReleaseEvent, RenderEvent, UpdateEvent};
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
@@ -49,12 +49,24 @@ fn main() {
             });
         }
 
-        if let Some(Button::Keyboard(key)) = event.press_args() {
-            state.key(key, true);
+        if let Some(button) = event.press_args() {
+            match button {
+                Button::Keyboard(key) => state.key(key, true),
+                Button::Mouse(button) => state.mouse_button(button, true),
+                _ => {}
+            }
         }
 
-        if let Some(Button::Keyboard(key)) = event.release_args() {
-            state.key(key, false);
+        if let Some(button) = event.release_args() {
+            match button {
+                Button::Keyboard(key) => state.key(key, false),
+                Button::Mouse(button) => state.mouse_button(button, false),
+                _ => {}
+            }
+        }
+
+        if let Some([x, y]) = event.mouse_cursor_args() {
+            state.mouse(x, y);
         }
     }
 }
