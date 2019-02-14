@@ -9,6 +9,7 @@ mod camera;
 mod limits;
 mod part;
 mod state;
+mod util;
 
 use camera::Camera;
 use state::State;
