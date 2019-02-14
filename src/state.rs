@@ -65,8 +65,8 @@ impl State {
                     Some(part::Part::Rectangle(part::Rectangle::new(
                         collider.handle(),
                         &world,
-                        he.x * 2.0 + margin,
-                        he.y * 2.0 + margin,
+                        he.x + margin,
+                        he.y + margin,
                     )))
                 } else {
                     println!("Unknown shape");

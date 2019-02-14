@@ -35,7 +35,12 @@ impl Rectangle {
     {
         let position = camera.to_global(&self.position);
         self.shape.draw(
-            [0.0, 0.0, self.width, self.height],
+            [
+                -self.width,
+                -self.height,
+                self.width * 2.0,
+                self.height * 2.0,
+            ],
             &graphics::DrawState::default(),
             c.trans(position.x, position.y)
                 .zoom(camera.zoom())
