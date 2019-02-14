@@ -150,21 +150,9 @@ impl State {
                         let _ = self.world.remove_constraint(joint);
                     }
 
-                    let body_pos = self
-                        .world
-                        .body(body.0)
-                        .unwrap()
-                        .part(body.1)
-                        .unwrap()
-                        .position();
-                    let body_mass = self
-                        .world
-                        .body(body.0)
-                        .unwrap()
-                        .part(body.1)
-                        .unwrap()
-                        .local_inertia()
-                        .mass();
+                    let body_part = self.world.body(body.0).unwrap().part(body.1).unwrap();
+                    let body_pos = body_part.position();
+                    let body_mass = body_part.local_inertia().mass();
                     let anchor1 = self.mouse_position_world;
                     let anchor2 = body_pos.inverse() * anchor1;
                     let joint = MouseConstraint::new(
