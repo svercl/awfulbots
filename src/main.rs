@@ -6,6 +6,7 @@ use piston::input::{Button, PressEvent, ReleaseEvent, RenderEvent, UpdateEvent};
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
+mod limits;
 mod part;
 mod state;
 
