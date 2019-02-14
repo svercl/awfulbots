@@ -25,12 +25,8 @@ impl Rectangle {
     }
 
     pub fn update(&mut self, world: &World<f64>) {
-        self.position = world
-            .collider(self.handle)
-            .unwrap()
-            .position()
-            .translation
-            .vector;
+        let collider = world.collider(self.handle).unwrap();
+        self.position = collider.position().translation.vector;
     }
 
     pub fn draw<G>(&self, camera: &Camera, c: graphics::Context, g: &mut G)
