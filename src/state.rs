@@ -19,7 +19,7 @@ pub struct State {
 impl State {
     pub fn new(camera: Camera) -> Self {
         let mut world = World::new();
-        world.set_gravity(Vector2::new(0.0, -9.81));
+        world.set_gravity(Vector2::new(0.0, -30.0));
 
         let ground_size = 25.0;
         let ground_shape = ShapeHandle::new(Cuboid::new(Vector2::new(ground_size, 1.0)));
@@ -27,14 +27,14 @@ impl State {
             .translation(-Vector2::y())
             .build(&mut world);
 
-        let num = 25;
+        let num = 10;
         let rad = 1.0;
 
-        let cuboid = ShapeHandle::new(Ball::new(rad));
+        let cuboid = ShapeHandle::new(Cuboid::new(Vector2::repeat(rad)));
         let collider_desc = ColliderDesc::new(cuboid).density(1.0);
         let mut rb_desc = RigidBodyDesc::new().collider(&collider_desc);
 
-        let shift = (rad + collider_desc.get_margin()) * 2.0 + 0.002;
+        let shift = (rad + collider_desc.get_margin()) * 2.0;
         let centerx = shift * (num as f64) / 2.0;
         let centery = shift / 2.0;
 
