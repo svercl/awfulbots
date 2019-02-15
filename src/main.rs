@@ -31,8 +31,6 @@ fn main() {
             .exit_on_esc(false)
             // use specific opengl
             .opengl(opengl)
-            // vsync for smoothness (will eventually be a toggle)
-            .vsync(true)
             .build()
             .unwrap();
     let mut gl = GlGraphics::new(opengl);
