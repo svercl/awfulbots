@@ -175,4 +175,8 @@ impl State {
             _ => {}
         }
     }
+    
+    pub fn resize(&mut self, width: f64, height: f64) {
+        self.camera.set_size(width, height);
+    }
 }

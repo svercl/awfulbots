@@ -2,7 +2,9 @@ use glutin_window::GlutinWindow;
 use glutin_window::OpenGL;
 use opengl_graphics::GlGraphics;
 use piston::event_loop::{EventLoop, EventSettings, Events};
-use piston::input::{Button, MouseCursorEvent, PressEvent, ReleaseEvent, RenderEvent, UpdateEvent};
+use piston::input::{
+    Button, MouseCursorEvent, PressEvent, ReleaseEvent, RenderEvent, ResizeEvent, UpdateEvent,
+};
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
@@ -25,8 +27,6 @@ fn main() {
         .exit_on_esc(false)
         // use specific opengl
         .opengl(opengl)
-        // we don't want our user resizing the window (yet)
-        .resizable(false)
         // vsync for smoothness (will eventually be a toggle)
         .vsync(true)
         .build()
@@ -67,6 +67,10 @@ fn main() {
 
         if let Some([x, y]) = event.mouse_cursor_args() {
             state.mouse(x, y);
+        }
+
+        if let Some([width, height]) = event.resize_args() {
+            state.resize(width as f64, height as f64);
         }
     }
 }
