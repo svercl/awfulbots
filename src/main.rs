@@ -17,20 +17,24 @@ use camera::Camera;
 use state::State;
 
 fn main() {
-    let mut state = State::new(Camera::new(800.0, 600.0));
+    let initial_width = 800.0;
+    let initial_height = 600.0;
+
+    let mut state = State::new(Camera::new(initial_width, initial_height));
 
     // this is a great middle ground
     let opengl = OpenGL::V3_2;
 
-    let mut window: GlutinWindow = WindowSettings::new("awfulbots", [800, 600])
-        // don't close on esc (default)
-        .exit_on_esc(false)
-        // use specific opengl
-        .opengl(opengl)
-        // vsync for smoothness (will eventually be a toggle)
-        .vsync(true)
-        .build()
-        .unwrap();
+    let mut window: GlutinWindow =
+        WindowSettings::new("awfulbots", [initial_width, initial_height])
+            // don't close on esc (default)
+            .exit_on_esc(false)
+            // use specific opengl
+            .opengl(opengl)
+            // vsync for smoothness (will eventually be a toggle)
+            .vsync(true)
+            .build()
+            .unwrap();
     let mut gl = GlGraphics::new(opengl);
 
     let mut fps = fps_counter::FPSCounter::new();
