@@ -20,12 +20,13 @@ pub struct State {
     mouse_position_world: Point2<f64>,
     grabbed_object: Option<BodyPartHandle>,
     grabbed_object_constraint: Option<ConstraintHandle>,
+    middle_mouse_down: bool,
 }
 
 impl State {
     pub fn new(camera: Camera) -> Self {
         let mut world = World::new();
-        world.set_gravity(Vector2::new(0.0, -30.0));
+        world.set_gravity(Vector2::new(0.0, 30.0));
 
         let ground_size = 25.0;
         let ground_shape = ShapeHandle::new(Cuboid::new(Vector2::new(ground_size, 1.0)));
@@ -33,21 +34,23 @@ impl State {
             .translation(-Vector2::y())
             .build(&mut world);
 
-        let num = 10;
         let rad = 1.0;
 
         let cuboid = ShapeHandle::new(Cuboid::new(Vector2::repeat(rad)));
         let collider_desc = ColliderDesc::new(cuboid).density(1.0);
         let mut rb_desc = RigidBodyDesc::new().collider(&collider_desc);
 
-        let shift = (rad + collider_desc.get_margin()) * 2.0;
-        let centerx = shift * (num as f64) / 2.0;
-        let centery = shift / 2.0;
+        let width = 5;
+        let height = 10;
+        let shift = 0.5 * rad;
+        let centerx = shift * (width as f64) / 2.0;
 
-        for i in 0usize..num {
-            for j in 0usize..num {
-                let x = i as f64 * shift - centerx;
-                let y = j as f64 * shift + centery;
+        for i in 0usize..width {
+            for j in 0usize..height {
+                let fj = j as f64;
+                let fi = i as f64;
+                let x = fj * 5.0 * rad - centerx;
+                let y = -fi * 5.0 * rad - 0.04 - rad;
 
                 rb_desc
                     .set_translation(Vector2::new(x, y))
@@ -89,7 +92,16 @@ impl State {
             mouse_position_world: Point2::origin(),
             grabbed_object: None,
             grabbed_object_constraint: None,
+            middle_mouse_down: false,
         }
+    }
+
+    fn zoom_in(&mut self) {
+        self.camera.set_zoom(self.camera.zoom() * 4.0 / 3.0)
+    }
+
+    fn zoom_out(&mut self) {
+        self.camera.set_zoom(self.camera.zoom() * 3.0 / 4.0)
     }
 
     pub fn update(&mut self) {
@@ -112,35 +124,14 @@ impl State {
             Key::D | Key::Right if pressed => self.camera.trans(&Vector2::new(10.0, 0.0)),
             Key::W | Key::Up if pressed => self.camera.trans(&Vector2::new(0.0, 10.0)),
             Key::S | Key::Dollar if pressed => self.camera.trans(&Vector2::new(0.0, -10.0)),
-            Key::Plus | Key::NumPadPlus if pressed => {
-                self.camera.set_zoom(self.camera.zoom() * 4.0 / 3.0)
-            }
-            Key::Minus | Key::NumPadMinus if pressed => {
-                self.camera.set_zoom(self.camera.zoom() * 3.0 / 4.0)
-            }
+            Key::Plus | Key::NumPadPlus if pressed => self.zoom_in(),
+            Key::Minus | Key::NumPadMinus if pressed => self.zoom_out(),
             _ => {}
         }
     }
 
-    pub fn mouse(&mut self, x: f64, y: f64) {
-        self.mouse_position.x = x;
-        self.mouse_position.y = y;
-        let point = self.camera.to_local(&self.mouse_position);
-        self.mouse_position_world.x = point.x;
-        self.mouse_position_world.y = point.y;
-
-        if self.grabbed_object.is_some() {
-            let joint = self.grabbed_object_constraint.unwrap();
-            let joint = self
-                .world
-                .constraint_mut(joint)
-                .downcast_mut::<MouseConstraint<f64>>()
-                .unwrap();
-            joint.set_anchor_1(self.mouse_position_world);
-        }
-    }
-
     pub fn mouse_button(&mut self, button: MouseButton, pressed: bool) {
+        self.middle_mouse_down = button == MouseButton::Middle && pressed;
         match button {
             MouseButton::Left if pressed => {
                 if let Some(body) = util::get_body_at_mouse(&self.world, &self.mouse_position_world)
@@ -175,7 +166,54 @@ impl State {
             _ => {}
         }
     }
-    
+
+    pub fn mouse(&mut self, x: f64, y: f64) {
+        self.mouse_position.x = x;
+        self.mouse_position.y = y;
+        let point = self.camera.to_local(&self.mouse_position);
+        self.mouse_position_world.x = point.x;
+        self.mouse_position_world.y = point.y;
+
+        if self.grabbed_object.is_some() {
+            let joint = self.grabbed_object_constraint.unwrap();
+            let joint = self
+                .world
+                .constraint_mut(joint)
+                .downcast_mut::<MouseConstraint<f64>>()
+                .unwrap();
+            joint.set_anchor_1(self.mouse_position_world);
+        }
+    }
+
+    pub fn mouse_relative(&mut self, x: f64, y: f64) {
+        if self.middle_mouse_down && self.grabbed_object.is_none() {
+            const MAX_MOVEMENT: f64 = 0.2;
+            let x = if x > 0.0 {
+                MAX_MOVEMENT
+            } else if x < 0.0 {
+                -MAX_MOVEMENT
+            } else {
+                x
+            };
+            let y = if y > 0.0 {
+                MAX_MOVEMENT
+            } else if y < 0.0 {
+                -MAX_MOVEMENT
+            } else {
+                y
+            };
+            self.camera.trans(&Vector2::new(x, y));
+        }
+    }
+
+    pub fn mouse_scroll(&mut self, x: f64, y: f64) {
+        if y < 0.0 {
+            self.zoom_out();
+        } else {
+            self.zoom_in();
+        }
+    }
+
     pub fn resize(&mut self, width: f64, height: f64) {
         self.camera.set_size(width, height);
     }

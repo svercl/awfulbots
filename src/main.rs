@@ -3,7 +3,8 @@ use glutin_window::OpenGL;
 use opengl_graphics::GlGraphics;
 use piston::event_loop::{EventLoop, EventSettings, Events};
 use piston::input::{
-    Button, MouseCursorEvent, PressEvent, ReleaseEvent, RenderEvent, ResizeEvent, UpdateEvent,
+    Button, MouseCursorEvent, MouseRelativeEvent, MouseScrollEvent, PressEvent, ReleaseEvent,
+    RenderEvent, ResizeEvent, UpdateEvent,
 };
 use piston::window::{AdvancedWindow, WindowSettings};
 
@@ -69,6 +70,14 @@ fn main() {
 
         if let Some([x, y]) = event.mouse_cursor_args() {
             state.mouse(x, y);
+        }
+
+        if let Some([x, y]) = event.mouse_relative_args() {
+            state.mouse_relative(x, y);
+        }
+
+        if let Some([x, y]) = event.mouse_scroll_args() {
+            state.mouse_scroll(x, y);
         }
 
         if let Some([width, height]) = event.resize_args() {
