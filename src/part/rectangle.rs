@@ -1,5 +1,5 @@
 use crate::camera::Camera;
-use graphics::{Graphics, Transformed};
+use graphics::{Colored, Graphics, Transformed};
 use nalgebra::Vector2;
 use nphysics2d::object::ColliderHandle;
 use nphysics2d::world::World;
@@ -16,7 +16,11 @@ pub struct Rectangle {
 impl Rectangle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, width: f64, height: f64) -> Self {
         let iso = world.collider(handle).unwrap().position();
-        let shape = graphics::Rectangle::new([rand::random(), rand::random(), rand::random(), 1.0]);
+        let color = [rand::random(), rand::random(), rand::random(), 1.0];
+        let shape = graphics::Rectangle::new(color).border(graphics::rectangle::Border {
+            color: color.shade(0.5),
+            radius: 0.1,
+        });
         Rectangle {
             position: iso.translation.vector,
             rotation: iso.rotation.angle(),
