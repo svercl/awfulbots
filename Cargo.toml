@@ -9,6 +9,9 @@ edition = "2018"
 opt-level = 1
 
 [dependencies]
+# Gui
+conrod_core = "0.63"
+conrod_piston = "0.63"
 # Debug
 fps_counter = "1.0"
 # Math

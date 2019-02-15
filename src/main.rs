@@ -9,12 +9,14 @@ use piston::input::{
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
+mod gui;
 mod limits;
 mod part;
 mod state;
 mod util;
 
 use camera::Camera;
+use gui::Gui;
 use state::State;
 
 fn main() {
@@ -35,11 +37,14 @@ fn main() {
             .build()
             .unwrap();
     let mut gl = GlGraphics::new(opengl);
+    let mut gui = Gui::new(initial_width, initial_height);
 
     let mut fps = fps_counter::FPSCounter::new();
 
     let mut events = Events::new(EventSettings::default().ups(60));
     while let Some(event) = events.next(&mut window) {
+        gui.event(event.clone());
+
         if let Some(_) = event.update_args() {
             state.update();
             window.set_title(format!("awfulbots | fps: {}", fps.tick()));
