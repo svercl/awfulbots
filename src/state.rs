@@ -122,8 +122,8 @@ impl State {
         match key {
             Key::A | Key::Left if pressed => self.camera.trans(&Vector2::new(-10.0, 0.0)),
             Key::D | Key::Right if pressed => self.camera.trans(&Vector2::new(10.0, 0.0)),
-            Key::W | Key::Up if pressed => self.camera.trans(&Vector2::new(0.0, 10.0)),
-            Key::S | Key::Dollar if pressed => self.camera.trans(&Vector2::new(0.0, -10.0)),
+            Key::W | Key::Up if pressed => self.camera.trans(&Vector2::new(0.0, -10.0)),
+            Key::S | Key::Dollar if pressed => self.camera.trans(&Vector2::new(0.0, 10.0)),
             Key::Plus | Key::NumPadPlus if pressed => self.zoom_in(),
             Key::Minus | Key::NumPadMinus if pressed => self.zoom_out(),
             _ => {}
