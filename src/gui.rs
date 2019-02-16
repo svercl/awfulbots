@@ -13,7 +13,8 @@ widget_ids! {
     struct Ids {
         button,
         canvas,
-        text
+        text,
+        slider,
     }
 }
 
@@ -30,7 +31,7 @@ pub struct Gui {
 
 impl Gui {
     pub fn new(width: f64, height: f64) -> Self {
-        let mut ui = UiBuilder::new([width, height]).theme(theme()).build();
+        let mut ui = UiBuilder::new([width, height]).build();
         ui.fonts
             .insert_from_file("assets/ClearSans-Regular.ttf")
             .unwrap();
@@ -66,16 +67,13 @@ impl Gui {
 
         let mut ui = self.ui.set_widgets();
         widget::Canvas::new()
-            .pad(MARGIN)
             .scroll_kids_vertically()
+            .x_y(0.0, 0.0)
+            .w_h(50.0, 200.0)
             .set(self.ids.canvas, &mut ui);
-        widget::Text::new("Testing conrod")
+        widget::Text::new("Testing")
             .mid_top_of(self.ids.canvas)
             .set(self.ids.text, &mut ui);
-        widget::Button::new()
-            .down(60.0)
-            .label("PRESS ME")
-            .set(self.ids.button, &mut ui);
     }
 
     pub fn event<GE>(&mut self, event: GE)
@@ -110,7 +108,7 @@ impl Gui {
                 text_vertex_data.extend(data.iter().flat_map(|&b| vec![255, 255, 255, b]));
                 UpdateTexture::update(
                     cache,
-                    &mut (), // we don't have an encoder
+                    &mut (), // we don't have a factory
                     Format::Rgba8,
                     &text_vertex_data[..],
                     offset,
@@ -133,27 +131,5 @@ impl Gui {
             cache_queued_glyphs,
             texture_from_image,
         );
-    }
-}
-
-fn theme() -> conrod_core::Theme {
-    use conrod_core::position::{Align, Direction, Padding, Position, Relative};
-    conrod_core::Theme {
-        name: "Demo Theme".to_string(),
-        padding: Padding::none(),
-        x_position: Position::Relative(Relative::Align(Align::Start), None),
-        y_position: Position::Relative(Relative::Direction(Direction::Backwards, 20.0), None),
-        background_color: conrod_core::color::DARK_CHARCOAL,
-        shape_color: conrod_core::color::LIGHT_CHARCOAL,
-        border_color: conrod_core::color::BLACK,
-        border_width: 0.0,
-        label_color: conrod_core::color::WHITE,
-        font_id: None,
-        font_size_large: 26,
-        font_size_medium: 18,
-        font_size_small: 12,
-        widget_styling: conrod_core::theme::StyleMap::default(),
-        mouse_drag_threshold: 0.0,
-        double_click_threshold: std::time::Duration::from_millis(500),
     }
 }

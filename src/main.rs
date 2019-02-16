@@ -37,7 +37,7 @@ fn main() {
             .build()
             .unwrap();
     let mut gl = GlGraphics::new(opengl);
-    let mut gui = Gui::new(initial_width, initial_height);
+    // let mut gui = Gui::new(initial_width, initial_height);
 
     let mut fps = fps_counter::FPSCounter::new();
 
@@ -47,6 +47,7 @@ fn main() {
 
         if let Some(_) = event.update_args() {
             state.update();
+            // gui.update();
             window.set_title(format!("awfulbots | fps: {}", fps.tick()));
         }
 
@@ -54,6 +55,7 @@ fn main() {
             gl.draw(args.viewport(), |c, g| {
                 graphics::clear([0.2, 0.4, 0.6, 1.0], g);
                 state.draw(c, g);
+                // gui.draw(c, g);
             });
         }
 
