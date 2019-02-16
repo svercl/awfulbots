@@ -14,6 +14,8 @@ pub struct Circle {
 
 impl Circle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, radius: f64) -> Self {
+        log::info!("Creating `Circle` with radius of: {}", radius);
+
         let iso = world.collider(handle).unwrap().position();
         let shape = graphics::Ellipse::new([rand::random(), rand::random(), rand::random(), 1.0])
             .resolution(16);
@@ -33,7 +35,7 @@ impl Circle {
         self.rotation = iso.rotation.angle();
     }
 
-    pub fn draw<G: Graphics>(&self, camera: &Camera, c: graphics::Context, g: &mut G) {
+    pub fn draw<G: Graphics>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G) {
         let position = camera.to_global(&self.position);
         self.shape.draw(
             [
@@ -43,11 +45,11 @@ impl Circle {
                 self.radius * 2.0,
             ],
             &graphics::DrawState::default(),
-            c.trans(position.x, position.y)
+            ctx.trans(position.x, position.y)
                 .rot_rad(self.rotation)
                 .zoom(camera.zoom())
                 .transform,
-            g,
+            gfx,
         );
     }
 }

@@ -1,5 +1,6 @@
 use crate::camera::Camera;
 use graphics::Graphics;
+use nalgebra::Vector2;
 use nphysics2d::world::World;
 
 pub mod circle;
@@ -21,13 +22,45 @@ impl Part {
         }
     }
 
-    pub fn draw<G>(&self, camera: &Camera, c: graphics::Context, g: &mut G)
+    pub fn draw<G>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G)
     where
         G: Graphics,
     {
         match self {
-            Part::Circle(circle) => circle.draw(camera, c, g),
-            Part::Rectangle(rectangle) => rectangle.draw(camera, c, g),
+            Part::Circle(circle) => circle.draw(camera, ctx, gfx),
+            Part::Rectangle(rectangle) => rectangle.draw(camera, ctx, gfx),
         }
+    }
+
+    // pub fn create(&mut self, world: &World<f64>) {
+    //     match self {
+    //         Part::Circle(circle) => circle.create(world),
+    //         Part::Rectangle(rectangle) => rectangle.create(world),
+    //     }
+    // }
+
+    // pub fn destroy(&mut self, world: &World<f64>) {
+    //     match self {
+    //         Part::Circle(circle) => circle.destroy(world),
+    //         Part::Rectangle(rectangle) => rectangle.destroy(world),
+    //     }
+    // }
+
+    pub fn world_position(&self, world: &World<f64>) -> Vector2<f64> {
+        unimplemented!()
+    }
+
+    pub fn world_rotation(&self, world: &World<f64>) -> f64 {
+        unimplemented!()
+    }
+
+    // returns the position when the game is not running
+    pub fn position(&self) -> Vector2<f64> {
+        unimplemented!()
+    }
+
+    // returns the rotation when the game is not running
+    pub fn rotation(&self) -> f64 {
+        unimplemented!()
     }
 }

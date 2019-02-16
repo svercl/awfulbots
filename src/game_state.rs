@@ -1,7 +1,8 @@
 use crate::camera::Camera;
 use crate::part;
 use crate::util;
-use graphics::Transformed;
+use graphics::character::CharacterCache;
+use graphics::{DrawState, Graphics, Transformed};
 use nalgebra::{Isometry2, Point2, Vector2};
 use ncollide2d::shape::{Ball, Cuboid, ShapeHandle};
 use ncollide2d::world::CollisionGroups;
@@ -12,7 +13,7 @@ use nphysics2d::world::World;
 use opengl_graphics::GlGraphics;
 use piston::input::{Key, MouseButton};
 
-pub struct State {
+pub struct GameState {
     camera: Camera,
     world: World<f64>,
     parts: Vec<part::Part>,
@@ -23,7 +24,7 @@ pub struct State {
     middle_mouse_down: bool,
 }
 
-impl State {
+impl GameState {
     pub fn new(camera: Camera) -> Self {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
@@ -78,13 +79,13 @@ impl State {
                         he.y + margin,
                     )))
                 } else {
-                    println!("Unknown shape");
+                    log::warn!("Unknown shape");
                     None
                 }
             })
             .collect::<Vec<_>>();
 
-        State {
+        GameState {
             camera,
             world,
             parts,
@@ -112,10 +113,22 @@ impl State {
         }
     }
 
-    pub fn draw(&self, ctx: graphics::Context, gl: &mut GlGraphics) {
+    pub fn draw<G, C>(&self, ctx: graphics::Context, gfx: &mut G, glyphs: &mut C)
+    where
+        G: Graphics,
+        C: CharacterCache<Texture = G::Texture>,
+    {
         for part in &self.parts {
-            part.draw(&self.camera, ctx, gl);
+            part.draw(&self.camera, ctx, gfx);
         }
+
+        let _ = graphics::Text::new(12).draw(
+            "text: &str",
+            glyphs,
+            &DrawState::default(),
+            ctx.trans(0.0, 0.0).transform,
+            gfx,
+        );
     }
 
     pub fn key(&mut self, key: Key, pressed: bool) {

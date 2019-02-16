@@ -1,39 +1,29 @@
-use glutin_window::GlutinWindow;
-use glutin_window::OpenGL;
-use opengl_graphics::GlGraphics;
+use glutin_window::{GlutinWindow, OpenGL};
+use opengl_graphics::{GlGraphics, GlyphCache, TextureSettings};
 use piston::event_loop::{EventLoop, EventSettings, Events};
-use piston::input::{
-    Button,
-    ButtonArgs,
-    ButtonState,
-    Event,
-    Input,
-    Loop,
-    Motion,
-    // MouseCursorEvent, MouseRelativeEvent, MouseScrollEvent, PressEvent, ReleaseEvent, RenderEvent,
-    // ResizeEvent, UpdateEvent,
-};
+use piston::input::{Button, ButtonArgs, ButtonState, Event, Input, Loop, Motion};
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
+mod game_state;
 mod gui;
 mod limits;
 mod part;
-mod state;
 mod util;
 
 use camera::Camera;
 // use gui::Gui;
-use state::State;
+use game_state::GameState;
 
 fn main() {
     // initialize logging facility
     env_logger::init();
 
+    // our initial window size
     let initial_width = 800.0;
     let initial_height = 600.0;
 
-    let mut game_state = State::new(Camera::new(initial_width, initial_height));
+    let mut game_state = GameState::new(Camera::new(initial_width, initial_height));
 
     // this is a great middle ground
     let opengl = OpenGL::V3_2;
@@ -46,6 +36,9 @@ fn main() {
             .unwrap();
     let mut gl = GlGraphics::new(opengl);
     // let mut gui = Gui::new(initial_width, initial_height);
+
+    let mut glyphs =
+        GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new()).unwrap();
 
     let mut fps = fps_counter::FPSCounter::new();
 
@@ -76,10 +69,10 @@ fn main() {
                     window.set_title(format!("awfulbots | fps: {}", fps.tick()));
                 }
                 Loop::Render(args) => {
-                    gl.draw(args.viewport(), |c, g| {
-                        graphics::clear([0.2, 0.4, 0.6, 1.0], g);
-                        game_state.draw(c, g);
-                        // gui.draw(c, g);
+                    gl.draw(args.viewport(), |ctx, gfx| {
+                        graphics::clear([0.2, 0.4, 0.6, 1.0], gfx);
+                        game_state.draw(ctx, gfx, &mut glyphs);
+                        // gui.draw(ctx, gfx);
                     });
                 }
                 _ => {}

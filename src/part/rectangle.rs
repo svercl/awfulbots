@@ -15,6 +15,8 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, width: f64, height: f64) -> Self {
+        log::info!("Creating `Rectangle` with dimensions: {}x{}", width, height);
+
         let iso = world.collider(handle).unwrap().position();
         let color = [rand::random(), rand::random(), rand::random(), 1.0];
         let shape = graphics::Rectangle::new(color).border(graphics::rectangle::Border {
@@ -38,7 +40,7 @@ impl Rectangle {
         self.rotation = iso.rotation.angle();
     }
 
-    pub fn draw<G>(&self, camera: &Camera, c: graphics::Context, g: &mut G)
+    pub fn draw<G>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G)
     where
         G: Graphics,
     {
@@ -51,11 +53,11 @@ impl Rectangle {
                 self.height * 2.0,
             ],
             &graphics::DrawState::default(),
-            c.trans(position.x, position.y)
+            ctx.trans(position.x, position.y)
                 .rot_rad(self.rotation)
                 .zoom(camera.zoom())
                 .transform,
-            g,
+            gfx,
         );
     }
 }
