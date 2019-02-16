@@ -21,8 +21,8 @@ ncollide2d = "0.18"
 nphysics2d = "0.10"
 # Graphics
 piston = "0.42"
-piston2d-opengl_graphics = "0.59"
 piston2d-graphics = "0.30"
+piston2d-opengl_graphics = "0.59"
 pistoncore-glutin_window = "0.54"
 # Random
 rand = "0.6"
