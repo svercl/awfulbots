@@ -45,50 +45,35 @@ fn main() {
     while let Some(event) = events.next(&mut window) {
         // gui.event(event.clone());
 
-        if let Some(_) = event.update_args() {
+        event.update(|_| {
             state.update();
             // gui.update();
             window.set_title(format!("awfulbots | fps: {}", fps.tick()));
-        }
+        });
 
-        if let Some(args) = event.render_args() {
+        event.render(|args| {
             gl.draw(args.viewport(), |c, g| {
                 graphics::clear([0.2, 0.4, 0.6, 1.0], g);
                 state.draw(c, g);
                 // gui.draw(c, g);
             });
-        }
+        });
 
-        if let Some(button) = event.press_args() {
-            match button {
-                Button::Keyboard(key) => state.key(key, true),
-                Button::Mouse(button) => state.mouse_button(button, true),
-                _ => {}
-            }
-        }
+        event.press(|button| match button {
+            Button::Keyboard(key) => state.key(key, true),
+            Button::Mouse(button) => state.mouse_button(button, true),
+            _ => {}
+        });
 
-        if let Some(button) = event.release_args() {
-            match button {
-                Button::Keyboard(key) => state.key(key, false),
-                Button::Mouse(button) => state.mouse_button(button, false),
-                _ => {}
-            }
-        }
+        event.release(|button| match button {
+            Button::Keyboard(key) => state.key(key, false),
+            Button::Mouse(button) => state.mouse_button(button, false),
+            _ => {}
+        });
 
-        if let Some([x, y]) = event.mouse_cursor_args() {
-            state.mouse(x, y);
-        }
-
-        if let Some([x, y]) = event.mouse_relative_args() {
-            state.mouse_relative(x, y);
-        }
-
-        if let Some([x, y]) = event.mouse_scroll_args() {
-            state.mouse_scroll(x, y);
-        }
-
-        if let Some([width, height]) = event.resize_args() {
-            state.resize(width as f64, height as f64);
-        }
+        event.mouse_cursor(|x, y| state.mouse(x, y));
+        event.mouse_relative(|x, y| state.mouse_relative(x, y));
+        event.mouse_scroll(|x, y| state.mouse_scroll(x, y));
+        event.resize(|width, height| state.resize(width, height));
     }
 }
