@@ -27,6 +27,9 @@ use camera::Camera;
 use state::State;
 
 fn main() {
+    // initialize logging facility
+    env_logger::init();
+
     let initial_width = 800.0;
     let initial_height = 600.0;
 
