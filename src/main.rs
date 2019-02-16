@@ -102,17 +102,17 @@ fn main() {
 
         // event.press(|button| match button {
         //     Button::Keyboard(key) => state.key(key, true),
-        //     Button::Mouse(button) => state.mouse_button(button, true),
+        //     Button::Mouse(button) => state.mouse(button, true),
         //     _ => {}
         // });
 
         // event.release(|button| match button {
         //     Button::Keyboard(key) => state.key(key, false),
-        //     Button::Mouse(button) => state.mouse_button(button, false),
+        //     Button::Mouse(button) => state.mouse(button, false),
         //     _ => {}
         // });
 
-        // event.mouse_cursor(|x, y| state.mouse(x, y));
+        // event.mouse_cursor(|x, y| state.mouse_cursor(x, y));
         // event.mouse_relative(|x, y| state.mouse_relative(x, y));
         // event.mouse_scroll(|x, y| state.mouse_scroll(x, y));
         // event.resize(|width, height| state.resize(width, height));
