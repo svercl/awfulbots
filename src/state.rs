@@ -130,7 +130,7 @@ impl State {
         }
     }
 
-    pub fn mouse_button(&mut self, button: MouseButton, pressed: bool) {
+    pub fn mouse(&mut self, button: MouseButton, pressed: bool) {
         self.middle_mouse_down = button == MouseButton::Middle && pressed;
         match button {
             MouseButton::Left if pressed => {
@@ -167,7 +167,7 @@ impl State {
         }
     }
 
-    pub fn mouse(&mut self, x: f64, y: f64) {
+    pub fn mouse_cursor(&mut self, x: f64, y: f64) {
         self.mouse_position.x = x;
         self.mouse_position.y = y;
         let point = self.camera.to_local(&self.mouse_position);

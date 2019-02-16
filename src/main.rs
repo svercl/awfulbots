@@ -56,13 +56,11 @@ fn main() {
             Event::Input(e) => match e {
                 Input::Button(ButtonArgs { state, button, .. }) => match button {
                     Button::Keyboard(key) => game_state.key(key, state == ButtonState::Press),
-                    Button::Mouse(mouse) => {
-                        game_state.mouse_button(mouse, state == ButtonState::Press)
-                    }
+                    Button::Mouse(mouse) => game_state.mouse(mouse, state == ButtonState::Press),
                     _ => {}
                 },
                 Input::Move(motion) => match motion {
-                    Motion::MouseCursor(x, y) => game_state.mouse(x, y),
+                    Motion::MouseCursor(x, y) => game_state.mouse_cursor(x, y),
                     Motion::MouseRelative(x, y) => game_state.mouse_relative(x, y),
                     Motion::MouseScroll(x, y) => game_state.mouse_scroll(x, y),
                     _ => {}
