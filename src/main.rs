@@ -37,9 +37,7 @@ fn main() {
 
     let mut window: GlutinWindow =
         WindowSettings::new("awfulbots", [initial_width, initial_height])
-            // don't close on esc (default)
-            .exit_on_esc(false)
-            // use specific opengl
+            .controllers(false)
             .opengl(opengl)
             .build()
             .unwrap();
