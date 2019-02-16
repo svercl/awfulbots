@@ -43,7 +43,7 @@ fn main() {
 
     let mut events = Events::new(EventSettings::default().ups(60));
     while let Some(event) = events.next(&mut window) {
-        gui.event(event.clone());
+        // gui.event(event.clone());
 
         if let Some(_) = event.update_args() {
             state.update();
