@@ -1,8 +1,11 @@
+use conrod_core::color;
 use conrod_core::image::Map;
 use conrod_core::text::rt::Rect;
 use conrod_core::text::GlyphCache;
 use conrod_core::widget::{self, Widget};
-use conrod_core::{widget_ids, Labelable, Positionable, Sizeable, Ui, UiBuilder};
+use conrod_core::{
+    widget_ids, Color, Colorable, Labelable, Positionable, Scalar, Sizeable, Ui, UiBuilder,
+};
 use opengl_graphics::{Format, GlGraphics, Texture, TextureSettings, UpdateTexture};
 use piston::input::GenericEvent;
 
@@ -11,7 +14,25 @@ const POSITION_TOLERANCE: f32 = 0.1;
 
 widget_ids! {
     struct Ids {
-        button,
+        // top row
+        circle_button,
+        rectangle_button,
+        triangle_button,
+        undo_button,
+        redo_button,
+        zoom_in_button,
+        save_button,
+        main_menu_button,
+
+        // bottom row
+        fixed_joint_button,
+        rotating_joint_button,
+        sliding_joint_button,
+        text_button,
+        paste_button,
+        zoom_out_button,
+        load_button,
+
         canvas,
         text,
         slider,
@@ -64,16 +85,98 @@ impl Gui {
 
     pub fn update(&mut self) {
         const MARGIN: f64 = 30.0;
+        const MAIN_BUTTON_COLOR: Color = color::LIGHT_BLUE;
+        const MAIN_BUTTON_WIDTH: Scalar = 80.0;
+        const MAIN_BUTTON_HEIGHT: Scalar = 20.0;
+        const BUTTON_MARGIN: Scalar = 5.0;
 
         let mut ui = self.ui.set_widgets();
         widget::Canvas::new()
-            .scroll_kids_vertically()
-            .x_y(0.0, 0.0)
-            .w_h(50.0, 200.0)
+            .color(color::LIGHT_PURPLE)
+            .h(65.0)
+            .top_left()
             .set(self.ids.canvas, &mut ui);
-        widget::Text::new("Testing")
-            .mid_top_of(self.ids.canvas)
-            .set(self.ids.text, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Circle")
+            .parent(self.ids.canvas)
+            .top_left_with_margins(BUTTON_MARGIN, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(self.ids.circle_button, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Rectangle")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.circle_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(self.ids.rectangle_button, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Triangle")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.rectangle_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(self.ids.triangle_button, &mut ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Undo")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.triangle_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(self.ids.undo_button, &mut ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Redo")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.undo_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(self.ids.redo_button, &mut ui);
+
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .down_from(self.ids.circle_button, BUTTON_MARGIN)
+            .label_font_size(12)
+            .label("Fixed Joint")
+            .parent(self.ids.canvas)
+            .wh([80.0, 20.0])
+            .set(self.ids.fixed_joint_button, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Rotating Joint")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.fixed_joint_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(self.ids.rotating_joint_button, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Sliding Joint")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.rotating_joint_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(self.ids.sliding_joint_button, &mut ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Text")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.sliding_joint_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(self.ids.text_button, &mut ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Paste")
+            .parent(self.ids.canvas)
+            .right_from(self.ids.text_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(self.ids.paste_button, &mut ui);
     }
 
     pub fn event<GE>(&mut self, event: GE)
