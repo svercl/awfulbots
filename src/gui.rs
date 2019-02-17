@@ -170,14 +170,18 @@ impl Gui {
             .right_from(self.ids.sliding_joint_button, BUTTON_MARGIN)
             .wh([60.0, 20.0])
             .set(self.ids.text_button, &mut ui);
-        widget::Button::new()
+        if widget::Button::new()
             .color(UTILITY_BUTTON_COLOR)
             .label_font_size(12)
             .label("Paste")
             .parent(self.ids.canvas)
             .right_from(self.ids.text_button, BUTTON_MARGIN)
             .wh([60.0, 20.0])
-            .set(self.ids.paste_button, &mut ui);
+            .set(self.ids.paste_button, &mut ui)
+            .was_clicked()
+        {
+            log::trace!("Paste clicked");
+        }
     }
 
     pub fn event<GE>(&mut self, event: GE)
