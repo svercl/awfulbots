@@ -33,10 +33,30 @@ widget_ids! {
         zoom_out_button,
         load_button,
 
+        // special
+        play_button,
+
         canvas,
         text,
         slider,
         file_area,
+    }
+}
+
+struct GuiState {
+    file_area_open: bool,
+    edit_area_open: bool,
+    view_area_open: bool,
+    extras_area_open: bool,
+}
+impl Default for GuiState {
+    fn default() -> Self {
+        GuiState {
+            file_area_open: false,
+            edit_area_open: false,
+            view_area_open: false,
+            extras_area_open: false,
+        }
     }
 }
 
@@ -49,7 +69,7 @@ pub struct Gui {
     image_map: Map<Texture>,
     width: f64,
     height: f64,
-    file_area_open: bool,
+    state: GuiState,
 }
 
 impl Gui {
@@ -82,7 +102,7 @@ impl Gui {
             image_map: Map::new(),
             width,
             height,
-            file_area_open: false,
+            state: GuiState::default(),
         }
     }
 
@@ -97,7 +117,7 @@ impl Gui {
         let mut ui = self.ui.set_widgets();
         widget::Canvas::new()
             .color(color::PURPLE)
-            .h(65.0)
+            .h(80.0)
             .top_left()
             .set(self.ids.canvas, &mut ui);
         widget::Button::new()
@@ -105,7 +125,7 @@ impl Gui {
             .label_font_size(12)
             .label("Circle")
             .parent(self.ids.canvas)
-            .top_left_with_margins(BUTTON_MARGIN, BUTTON_MARGIN)
+            .top_left_with_margins(BUTTON_MARGIN + 20.0, BUTTON_MARGIN)
             .wh([80.0, 20.0])
             .set(self.ids.circle_button, &mut ui);
         widget::Button::new()
@@ -186,19 +206,40 @@ impl Gui {
             log::trace!("Paste clicked");
         }
 
-        if let (Some(area), _) = widget::CollapsibleArea::new(self.file_area_open, "File")
+        widget::Button::new()
+            .color(color::RED)
+            .label_font_size(20)
+            .label("Play!")
             .parent(self.ids.canvas)
-            .down_from(self.ids.paste_button, 20.0)
+            .bottom_right_with_margin(BUTTON_MARGIN)
+            .wh([70.0, 40.0])
+            .set(self.ids.play_button, &mut ui);
+
+        if let (Some(area), _) = widget::CollapsibleArea::new(self.state.file_area_open, "File")
+            .parent(self.ids.canvas)
+            .top_left_with_margin(BUTTON_MARGIN)
+            .wh([50.0, 20.0])
             .set(self.ids.file_area, &mut ui)
         {
-            let f = widget::Button::new().label("Open");
-            if area.set(f, &mut ui).was_clicked() {
-                log::trace!("Open clicked");
-                self.file_area_open = false;
+            self.state.file_area_open = true;
+
+            let main_menu = widget::Button::new().label("Main Menu").label_font_size(8);
+            if area.set(main_menu, &mut ui).was_clicked() {
+                log::trace!("Main Menu clicked");
+                self.state.file_area_open = false;
             }
-            self.file_area_open = true;
+        // let save = widget::Button::new().label("Save...").label_font_size(8);
+        // if area.set(save, &mut ui).was_clicked() {
+        //     log::trace!("Save clicked");
+        //     self.state.file_area_open = false;
+        // }
+        // let load_robot = widget::Button::new().label("Load Robot").label_font_size(8);
+        // if area.set(load_robot, &mut ui).was_clicked() {
+        //     log::trace!("Load Robot clicked");
+        //     self.state.file_area_open = false;
+        // }
         } else {
-            self.file_area_open = false;
+            self.state.file_area_open = false;
         }
     }
 
