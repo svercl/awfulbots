@@ -88,11 +88,12 @@ impl Gui {
         const MAIN_BUTTON_COLOR: Color = color::LIGHT_BLUE;
         const MAIN_BUTTON_WIDTH: Scalar = 80.0;
         const MAIN_BUTTON_HEIGHT: Scalar = 20.0;
+        const UTILITY_BUTTON_COLOR: Color = color::LIGHT_ORANGE;
         const BUTTON_MARGIN: Scalar = 5.0;
 
         let mut ui = self.ui.set_widgets();
         widget::Canvas::new()
-            .color(color::LIGHT_PURPLE)
+            .color(color::PURPLE)
             .h(65.0)
             .top_left()
             .set(self.ids.canvas, &mut ui);
@@ -121,7 +122,7 @@ impl Gui {
             .wh([80.0, 20.0])
             .set(self.ids.triangle_button, &mut ui);
         widget::Button::new()
-            .color(color::LIGHT_ORANGE)
+            .color(UTILITY_BUTTON_COLOR)
             .label_font_size(12)
             .label("Undo")
             .parent(self.ids.canvas)
@@ -129,7 +130,7 @@ impl Gui {
             .wh([60.0, 20.0])
             .set(self.ids.undo_button, &mut ui);
         widget::Button::new()
-            .color(color::LIGHT_ORANGE)
+            .color(UTILITY_BUTTON_COLOR)
             .label_font_size(12)
             .label("Redo")
             .parent(self.ids.canvas)
@@ -170,7 +171,7 @@ impl Gui {
             .wh([60.0, 20.0])
             .set(self.ids.text_button, &mut ui);
         widget::Button::new()
-            .color(color::LIGHT_ORANGE)
+            .color(UTILITY_BUTTON_COLOR)
             .label_font_size(12)
             .label("Paste")
             .parent(self.ids.canvas)
