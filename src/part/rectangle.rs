@@ -15,7 +15,7 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, width: f64, height: f64) -> Self {
-        log::info!("Creating `Rectangle` with dimensions: {}x{}", width, height);
+        log::info!("Creating with dimensions: {}x{}", width, height);
 
         let iso = world.collider(handle).unwrap().position();
         let color = [rand::random(), rand::random(), rand::random(), 1.0];
