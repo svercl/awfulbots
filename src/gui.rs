@@ -36,6 +36,7 @@ widget_ids! {
         canvas,
         text,
         slider,
+        file_area,
     }
 }
 
@@ -48,6 +49,7 @@ pub struct Gui {
     image_map: Map<Texture>,
     width: f64,
     height: f64,
+    file_area_open: bool,
 }
 
 impl Gui {
@@ -80,6 +82,7 @@ impl Gui {
             image_map: Map::new(),
             width,
             height,
+            file_area_open: false,
         }
     }
 
@@ -111,7 +114,7 @@ impl Gui {
             .label("Rectangle")
             .parent(self.ids.canvas)
             .right_from(self.ids.circle_button, BUTTON_MARGIN)
-            .wh([80.0, 20.0])
+            .wh_of(self.ids.circle_button)
             .set(self.ids.rectangle_button, &mut ui);
         widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
@@ -181,6 +184,21 @@ impl Gui {
             .was_clicked()
         {
             log::trace!("Paste clicked");
+        }
+
+        if let (Some(area), _) = widget::CollapsibleArea::new(self.file_area_open, "File")
+            .parent(self.ids.canvas)
+            .down_from(self.ids.paste_button, 20.0)
+            .set(self.ids.file_area, &mut ui)
+        {
+            let f = widget::Button::new().label("Open");
+            if area.set(f, &mut ui).was_clicked() {
+                log::trace!("Open clicked");
+                self.file_area_open = false;
+            }
+            self.file_area_open = true;
+        } else {
+            self.file_area_open = false;
         }
     }
 
