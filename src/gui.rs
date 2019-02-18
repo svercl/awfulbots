@@ -38,25 +38,11 @@ widget_ids! {
 
         canvas,
         text,
-        slider,
-        file_area,
-    }
-}
 
-struct GuiState {
-    file_area_open: bool,
-    edit_area_open: bool,
-    view_area_open: bool,
-    extras_area_open: bool,
-}
-impl Default for GuiState {
-    fn default() -> Self {
-        GuiState {
-            file_area_open: false,
-            edit_area_open: false,
-            view_area_open: false,
-            extras_area_open: false,
-        }
+        file,
+        edit,
+        view,
+        extras,
     }
 }
 
@@ -69,7 +55,6 @@ pub struct Gui {
     image_map: Map<Texture>,
     width: f64,
     height: f64,
-    state: GuiState,
 }
 
 impl Gui {
@@ -102,7 +87,6 @@ impl Gui {
             image_map: Map::new(),
             width,
             height,
-            state: GuiState::default(),
         }
     }
 
@@ -125,7 +109,7 @@ impl Gui {
             .label_font_size(12)
             .label("Circle")
             .parent(self.ids.canvas)
-            .top_left_with_margins(BUTTON_MARGIN + 20.0, BUTTON_MARGIN)
+            .top_left_with_margins(BUTTON_MARGIN + 25.0, BUTTON_MARGIN)
             .wh([80.0, 20.0])
             .set(self.ids.circle_button, &mut ui);
         widget::Button::new()
@@ -215,31 +199,82 @@ impl Gui {
             .wh([70.0, 40.0])
             .set(self.ids.play_button, &mut ui);
 
-        if let (Some(area), _) = widget::CollapsibleArea::new(self.state.file_area_open, "File")
-            .parent(self.ids.canvas)
-            .top_left_with_margin(BUTTON_MARGIN)
-            .wh([50.0, 20.0])
-            .set(self.ids.file_area, &mut ui)
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Main menu",
+                "Save...",
+                "Load robot",
+                "Load and insert",
+                "Load replay",
+                "Load challenge",
+            ],
+            None,
+        )
+        .label("File")
+        .label_font_size(12)
+        .parent(self.ids.canvas)
+        .top_left_with_margin(BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(self.ids.file, &mut ui)
         {
-            self.state.file_area_open = true;
+            log::trace!("File: Selected index {}", index);
+        }
 
-            let main_menu = widget::Button::new().label("Main Menu").label_font_size(8);
-            if area.set(main_menu, &mut ui).was_clicked() {
-                log::trace!("Main Menu clicked");
-                self.state.file_area_open = false;
-            }
-        // let save = widget::Button::new().label("Save...").label_font_size(8);
-        // if area.set(save, &mut ui).was_clicked() {
-        //     log::trace!("Save clicked");
-        //     self.state.file_area_open = false;
-        // }
-        // let load_robot = widget::Button::new().label("Load Robot").label_font_size(8);
-        // if area.set(load_robot, &mut ui).was_clicked() {
-        //     log::trace!("Load Robot clicked");
-        //     self.state.file_area_open = false;
-        // }
-        } else {
-            self.state.file_area_open = false;
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Change settings",
+                "Clear all",
+                "Undo",
+                "Redo",
+                "Cut",
+                "Copy",
+                "Paste",
+                "Delete",
+                "Move to front",
+                "Move to back",
+            ],
+            None,
+        )
+        .label("Edit")
+        .label_font_size(12)
+        .parent(self.ids.canvas)
+        .right_from(self.ids.file, BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(self.ids.edit, &mut ui)
+        {
+            log::trace!("Edit: Selected index {}", index);
+        }
+
+        // TODO: Add `Snap to center` `Show joints` `Show colors` `Show outlines` `Center on selection`
+        if let Some(index) = widget::DropDownList::new(&["Zoom in", "Zoom out"], None)
+            .label("View")
+            .label_font_size(12)
+            .parent(self.ids.canvas)
+            .right_from(self.ids.edit, BUTTON_MARGIN)
+            .wh([100.0, 20.0])
+            .set(self.ids.view, &mut ui)
+        {
+            log::trace!("View: Selected index {}", index);
+        }
+
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Mirror horizontal",
+                "Mirror vertical",
+                "Scale",
+                "Thrusters",
+                "Cannon",
+            ],
+            None,
+        )
+        .label("Extras")
+        .label_font_size(12)
+        .parent(self.ids.canvas)
+        .right_from(self.ids.view, BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(self.ids.extras, &mut ui)
+        {
+            log::trace!("Extras: Selected index {}", index);
         }
     }
 
