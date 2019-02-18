@@ -17,8 +17,12 @@ impl Circle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, radius: f64) -> Self {
         log::info!("Creating `Circle` with radius of: {}", radius);
 
-        let iso = world.collider(handle).unwrap().position();
-        let shape = graphics::Ellipse::new([rand::random(), rand::random(), rand::random(), 1.0])
+        let color = [rand::random(), rand::random(), rand::random(), 1.0];
+        let shape = graphics::Ellipse::new(color)
+            .border(Border {
+                color: color.shade(0.5),
+                radius: 0.1,
+            })
             .resolution(16);
         Circle {
             position: iso.translation.vector,
