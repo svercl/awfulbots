@@ -15,7 +15,7 @@ pub struct Circle {
 
 impl Circle {
     pub fn new(handle: ColliderHandle, world: &World<f64>, radius: f64) -> Self {
-        log::info!("Creating `Circle` with radius of: {}", radius);
+        log::info!("Creating with radius of: {}", radius);
 
         let color = [rand::random(), rand::random(), rand::random(), 1.0];
         let shape = graphics::Ellipse::new(color)
