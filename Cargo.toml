@@ -29,3 +29,6 @@ piston2d-opengl_graphics = "0.59"
 pistoncore-glutin_window = "0.54"
 # Random
 rand = "0.6"
+# Serialization
+bincode = "1.0"
+serde = "1.0"
