@@ -3,8 +3,8 @@ use graphics::Graphics;
 use nalgebra::Vector2;
 use nphysics2d::world::World;
 
-pub mod circle;
-pub mod rectangle;
+mod circle;
+mod rectangle;
 
 pub use self::circle::Circle;
 pub use self::rectangle::Rectangle;
