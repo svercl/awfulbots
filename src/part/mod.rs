@@ -1,7 +1,7 @@
 use crate::camera::Camera;
-use graphics::Graphics;
 use nalgebra::Vector2;
 use nphysics2d::world::World;
+use opengl_graphics::GlGraphics;
 
 mod circle;
 mod rectangle;
@@ -22,10 +22,7 @@ impl Part {
         }
     }
 
-    pub fn draw<G>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G)
-    where
-        G: Graphics,
-    {
+    pub fn draw(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut GlGraphics) {
         match self {
             Part::Circle(circle) => circle.draw(camera, ctx, gfx),
             Part::Rectangle(rectangle) => rectangle.draw(camera, ctx, gfx),

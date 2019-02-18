@@ -291,7 +291,7 @@ impl Gui {
         }
     }
 
-    pub fn draw(&mut self, ctx: graphics::Context, gl: &mut GlGraphics) {
+    pub fn draw(&mut self, ctx: graphics::Context, gfx: &mut GlGraphics) {
         // Avoid borrowchecker
         let Gui {
             ui,
@@ -326,7 +326,7 @@ impl Gui {
         conrod_piston::draw::primitives(
             primitives,
             ctx,
-            gl,
+            gfx,
             text_texture_cache,
             glyph_cache,
             &self.image_map,

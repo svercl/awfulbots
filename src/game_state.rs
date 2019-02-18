@@ -10,7 +10,7 @@ use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
 use nphysics2d::material::{BasicMaterial, MaterialHandle};
 use nphysics2d::object::{BodyPartHandle, ColliderDesc, ColliderHandle, RigidBodyDesc};
 use nphysics2d::world::World;
-use opengl_graphics::GlGraphics;
+use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
 
 pub struct GameState {
@@ -113,11 +113,12 @@ impl GameState {
         }
     }
 
-    pub fn draw<G, C>(&self, ctx: graphics::Context, gfx: &mut G, glyphs: &mut C)
-    where
-        G: Graphics,
-        C: CharacterCache<Texture = G::Texture>,
-    {
+    pub fn draw(
+        &self,
+        ctx: graphics::Context,
+        gfx: &mut GlGraphics,
+        glyphs: &mut GlyphCache<'static>,
+    ) {
         for part in &self.parts {
             part.draw(&self.camera, ctx, gfx);
         }

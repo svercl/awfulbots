@@ -3,6 +3,7 @@ use graphics::{Graphics, Transformed};
 use nalgebra::Vector2;
 use nphysics2d::object::ColliderHandle;
 use nphysics2d::world::World;
+use opengl_graphics::GlGraphics;
 
 pub struct Circle {
     position: Vector2<f64>,
@@ -35,8 +36,8 @@ impl Circle {
         self.rotation = iso.rotation.angle();
     }
 
-    pub fn draw<G: Graphics>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G) {
-        let position = camera.to_global(&self.position);
+    pub fn draw(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut GlGraphics) {
+        let position = camera.to_global(&self.iso.translation.vector);
         self.shape.draw(
             [
                 -self.radius,

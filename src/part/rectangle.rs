@@ -3,6 +3,7 @@ use graphics::{Colored, Graphics, Transformed};
 use nalgebra::Vector2;
 use nphysics2d::object::ColliderHandle;
 use nphysics2d::world::World;
+use opengl_graphics::GlGraphics;
 
 pub struct Rectangle {
     position: Vector2<f64>,
@@ -40,11 +41,7 @@ impl Rectangle {
         self.rotation = iso.rotation.angle();
     }
 
-    pub fn draw<G>(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut G)
-    where
-        G: Graphics,
-    {
-        let position = camera.to_global(&self.position);
+    pub fn draw(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut GlGraphics) {
         self.shape.draw(
             [
                 -self.width,
