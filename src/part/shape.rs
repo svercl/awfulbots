@@ -57,7 +57,7 @@ impl Shape {
 
     pub fn update(&mut self, world: &World<f64>) {
         if let Some(handle) = self.handle {
-            self.world_iso = world.collider(handle).unwrap().position().clone();
+            self.world_iso = *world.collider(handle).unwrap().position();
         }
     }
 
