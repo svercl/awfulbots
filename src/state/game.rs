@@ -2,14 +2,9 @@ use crate::camera::Camera;
 use crate::part;
 use crate::state::State;
 use crate::util;
-use graphics::character::CharacterCache;
-use graphics::{DrawState, Graphics, Transformed};
-use nalgebra::{Isometry2, Point2, Vector2};
-use ncollide2d::shape::{Ball, Cuboid, ShapeHandle};
-use ncollide2d::world::CollisionGroups;
+use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
-use nphysics2d::material::{BasicMaterial, MaterialHandle};
-use nphysics2d::object::{BodyPartHandle, ColliderDesc, ColliderHandle, RigidBodyDesc};
+use nphysics2d::object::BodyPartHandle;
 use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
@@ -36,6 +31,7 @@ impl GameState {
         parts.push(part::Part::Shape(
             part::ShapeBuilder::rectangle(25.0, 1.0)
                 .position(-Vector2::y())
+                .ground(true)
                 .build(),
         ));
 
@@ -56,6 +52,7 @@ impl GameState {
                 parts.push(part::Part::Shape(
                     part::ShapeBuilder::circle(rad)
                         .position(Vector2::new(x, y))
+                        .color([rand::random(), rand::random(), rand::random(), 1.0])
                         .build(),
                 ));
             }
@@ -108,10 +105,9 @@ impl State for GameState {
             Key::Minus | Key::NumPadMinus if pressed => self.zoom_out(),
             Key::Space if pressed => {
                 self.running = !self.running;
-                log::trace!("Running: {}", self.running);
                 for part in &mut self.parts {
                     if self.running {
-                        part.create(&self.camera, &mut self.world);
+                        part.create(&mut self.world);
                     } else {
                         part.destroy(&mut self.world);
                     }

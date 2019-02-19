@@ -3,8 +3,7 @@ use graphics::color;
 use graphics::{Colored, Context, Transformed};
 use nalgebra::{Isometry2, Vector2};
 use ncollide2d::shape::{Ball, Cuboid, ShapeHandle};
-use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
-use nphysics2d::object::{BodyPartHandle, ColliderDesc, ColliderHandle, RigidBodyDesc};
+use nphysics2d::object::{BodyHandle, BodyStatus, ColliderDesc, RigidBodyDesc};
 use nphysics2d::world::World;
 use opengl_graphics::GlGraphics;
 
@@ -18,12 +17,13 @@ pub struct Shape {
     kind: ShapeKind,
     iso: Isometry2<f64>,
     world_iso: Isometry2<f64>,
-    handle: Option<ColliderHandle>,
+    handle: Option<BodyHandle>,
     color: [f32; 4],
+    ground: bool,
 }
 
 impl Shape {
-    pub fn create(&mut self, camera: &Camera, world: &mut World<f64>) {
+    pub fn create(&mut self, world: &mut World<f64>) {
         if self.handle.is_some() {
             log::trace!("This shape is already initialized.");
             return;
@@ -35,14 +35,17 @@ impl Shape {
                 half_height,
             } => ShapeHandle::new(Cuboid::new(Vector2::new(half_width, half_height))),
         };
-        let collider = ColliderDesc::new(shape_handle)
-            .translation(self.iso.translation.vector)
+        let collider = ColliderDesc::new(shape_handle).density(1.0);
+        let rigid_body = RigidBodyDesc::new()
+            .collider(&collider)
+            .status(if self.ground {
+                BodyStatus::Static
+            } else {
+                BodyStatus::Dynamic // default
+            })
+            .position(self.iso)
             .build(world);
-        // RigidBodyDesc::new()
-        //     .collider(&collider)
-        //     .set_translation(camera.to_local(self.iso.translation.vector))
-        //     .build(world);
-        self.handle = Some(collider.handle());
+        self.handle = Some(rigid_body.handle());
     }
 
     pub fn destroy(&mut self, world: &mut World<f64>) {
@@ -50,14 +53,14 @@ impl Shape {
             log::trace!("This shape doesn't exist!");
             return;
         }
-        let collider = self.handle.unwrap();
-        world.remove_colliders(&[collider]);
+        let body = self.handle.unwrap();
+        world.remove_bodies(&[body]);
         self.handle = None;
     }
 
     pub fn update(&mut self, world: &World<f64>) {
         if let Some(handle) = self.handle {
-            self.world_iso = *world.collider(handle).unwrap().position();
+            self.world_iso = *world.rigid_body(handle).unwrap().position();
         }
     }
 
@@ -123,6 +126,7 @@ pub struct ShapeBuilder {
     position: Vector2<f64>,
     rotation: f64,
     color: [f32; 4],
+    ground: bool,
 }
 
 impl ShapeBuilder {
@@ -132,6 +136,7 @@ impl ShapeBuilder {
             position: nalgebra::zero(),
             rotation: 0.0,
             color: color::WHITE,
+            ground: false,
         }
     }
 
@@ -144,6 +149,7 @@ impl ShapeBuilder {
             position: nalgebra::zero(),
             rotation: 0.0,
             color: color::WHITE,
+            ground: false,
         }
     }
 
@@ -162,6 +168,11 @@ impl ShapeBuilder {
         self
     }
 
+    pub fn ground(&mut self, ground: bool) -> &mut Self {
+        self.ground = ground;
+        self
+    }
+
     pub fn build(&self) -> Shape {
         Shape {
             kind: self.kind,
@@ -169,6 +180,7 @@ impl ShapeBuilder {
             world_iso: Isometry2::identity(),
             handle: None,
             color: self.color,
+            ground: self.ground,
         }
     }
 }

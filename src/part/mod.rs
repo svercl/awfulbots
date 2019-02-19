@@ -23,9 +23,9 @@ impl Part {
         }
     }
 
-    pub fn create(&mut self, camera: &Camera, world: &mut World<f64>) {
+    pub fn create(&mut self, world: &mut World<f64>) {
         match self {
-            Part::Shape(shape) => shape.create(camera, world),
+            Part::Shape(shape) => shape.create(world),
         }
     }
 
