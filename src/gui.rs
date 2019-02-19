@@ -46,20 +46,30 @@ widget_ids! {
     }
 }
 
+// Gui is completely separate from the game
 pub struct Gui {
+    // the conrod Ui
     ui: Ui,
+    // cached text vertex data
     text_vertex_data: Vec<u8>,
+    // cached glyphs
     glyph_cache: GlyphCache<'static>,
+    // cached text textures
     text_texture_cache: Texture,
+    // ids for widgets
     ids: Ids,
+    // map for images
     image_map: Map<Texture>,
+    // the window width
     width: f64,
+    // the window height
     height: f64,
 }
 
 impl Gui {
     pub fn new(width: f64, height: f64) -> Self {
         let mut ui = UiBuilder::new([width, height]).build();
+        // insert our 
         ui.fonts
             .insert_from_file("assets/ClearSans-Regular.ttf")
             .unwrap();

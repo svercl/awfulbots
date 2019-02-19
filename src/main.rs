@@ -26,15 +26,20 @@ fn main() {
     // this is a great middle ground
     let opengl = OpenGL::V3_2;
 
+    // create our window
     let mut window: GlutinWindow =
         WindowSettings::new("awfulbots", [INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT])
+            // disable controllers
             .controllers(false)
+            // use the same opengl for both glgraphics and the window
             .opengl(opengl)
+            // don't allow resizing
             .resizable(false)
             .build()
             .unwrap();
 
     let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
+    // initialize with the game screen
     let mut current_screen: Box<Screen> = Box::new(GameScreen::new(camera));
     let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
@@ -42,10 +47,12 @@ fn main() {
     let mut glyphs =
         GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new()).unwrap();
 
+    // used to track fps
     let mut fps = fps_counter::FPSCounter::new();
 
     let mut events = Events::new(EventSettings::default().ups(60));
     while let Some(event) = events.next(&mut window) {
+        // pass the event over to the gui for processing
         gui.event(event.clone());
 
         match event {

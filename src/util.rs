@@ -3,6 +3,7 @@ use ncollide2d::world::CollisionGroups;
 use nphysics2d::object::{BodyPartHandle, ColliderAnchor};
 use nphysics2d::world::World;
 
+// this will return a body (if any) at the current point
 pub fn get_body_at_mouse(world: &World<f64>, point: &Point2<f64>) -> Option<BodyPartHandle> {
     let groups = CollisionGroups::default();
     for b in world

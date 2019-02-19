@@ -14,12 +14,13 @@ pub enum ScreenTransition {
     Quit,
 }
 
+// the base of all other screens
 pub trait Screen {
-    // These MUST be implemented
+    // these MUST be implemented
     fn update(&mut self, dt: f64);
     fn draw(&self, ctx: Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>);
 
-    // These are optional
+    // these are optional
     fn key(&mut self, _key: Key, _pressed: bool) {}
     fn mouse(&mut self, _button: MouseButton, _pressed: bool) {}
     fn mouse_cursor(&mut self, _x: f64, _y: f64) {}
