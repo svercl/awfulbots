@@ -5,41 +5,45 @@ use piston::input::{Button, ButtonArgs, ButtonState, Event, Input, Loop, Motion}
 use piston::window::{AdvancedWindow, WindowSettings};
 
 mod camera;
-mod game_state;
 mod gui;
 mod limits;
 mod part;
+mod state;
 mod util;
 
 use camera::Camera;
-use game_state::GameState;
 use gui::Gui;
+use state::{GameState, State};
+
+const INITIAL_WINDOW_WIDTH: f64 = 1280.0;
+const INITIAL_WINDOW_HEIGHT: f64 = 720.0;
 
 fn main() {
     // initialize logging facility
     env_logger::init();
 
-    // our initial window size
-    let initial_width = 1280.0;
-    let initial_height = 720.0;
-
-    let mut game_state = GameState::new(Camera::new(initial_width, initial_height));
+    let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
+    let mut current_state: Box<State> = Box::new(GameState::new(camera));
 
     // this is a great middle ground
     let opengl = OpenGL::V3_2;
 
     let mut window: GlutinWindow =
-        WindowSettings::new("awfulbots", [initial_width, initial_height])
+        WindowSettings::new("awfulbots", [INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT])
             .controllers(false)
             .opengl(opengl)
             .resizable(false)
             .build()
             .unwrap();
     let mut gl = GlGraphics::new(opengl);
-    let mut gui = Gui::new(initial_width, initial_height);
+    let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
-    let mut glyphs =
-        GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new()).unwrap();
+    let mut glyphs = GlyphCache::from_bytes(
+        include_bytes!("../assets/ClearSans-Regular.ttf"),
+        (),
+        TextureSettings::new(),
+    )
+    .unwrap();
 
     let mut fps = fps_counter::FPSCounter::new();
 
@@ -50,29 +54,33 @@ fn main() {
         match event {
             Event::Input(e) => match e {
                 Input::Button(ButtonArgs { state, button, .. }) => match button {
-                    Button::Keyboard(key) => game_state.key(key, state == ButtonState::Press),
-                    Button::Mouse(mouse) => game_state.mouse(mouse, state == ButtonState::Press),
+                    Button::Keyboard(key) => current_state.key(key, state == ButtonState::Press),
+                    Button::Mouse(mouse) => current_state.mouse(mouse, state == ButtonState::Press),
                     _ => {}
                 },
                 Input::Move(motion) => match motion {
-                    Motion::MouseCursor(x, y) => game_state.mouse_cursor(x, y),
-                    Motion::MouseRelative(x, y) => game_state.mouse_relative(x, y),
-                    Motion::MouseScroll(x, y) => game_state.mouse_scroll(x, y),
+                    Motion::MouseCursor(x, y) => current_state.mouse_cursor(x, y),
+                    Motion::MouseRelative(x, y) => current_state.mouse_relative(x, y),
+                    Motion::MouseScroll(x, y) => current_state.mouse_scroll(x, y),
                     _ => {}
                 },
-                Input::Resize(width, height) => game_state.resize(width, height),
+                Input::Resize(width, height) => current_state.resize(width, height),
                 _ => {}
             },
             Event::Loop(e) => match e {
-                Loop::Update(_) => {
-                    game_state.update();
+                Loop::Update(args) => {
+                    current_state.update(args.dt);
                     gui.update();
-                    window.set_title(format!("awfulbots | fps: {}", fps.tick()));
+                    window.set_title(format!(
+                        "awfulbots | fps: {}, dt: {:.4}",
+                        fps.tick(),
+                        args.dt
+                    ));
                 }
                 Loop::Render(args) => {
                     gl.draw(args.viewport(), |ctx, gfx| {
                         graphics::clear([0.2, 0.4, 0.6, 1.0], gfx);
-                        game_state.draw(ctx, gfx, &mut glyphs);
+                        current_state.draw(ctx, gfx, &mut glyphs);
                         gui.draw(ctx, gfx);
                     });
                 }

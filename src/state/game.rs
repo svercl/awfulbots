@@ -1,5 +1,6 @@
 use crate::camera::Camera;
 use crate::part;
+use crate::state::State;
 use crate::util;
 use graphics::character::CharacterCache;
 use graphics::{DrawState, Graphics, Transformed};
@@ -22,6 +23,7 @@ pub struct GameState {
     grabbed_object: Option<BodyPartHandle>,
     grabbed_object_constraint: Option<ConstraintHandle>,
     middle_mouse_down: bool,
+    running: bool,
 }
 
 impl GameState {
@@ -29,17 +31,15 @@ impl GameState {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
 
-        let ground_size = 25.0;
-        let ground_shape = ShapeHandle::new(Cuboid::new(Vector2::new(ground_size, 1.0)));
-        ColliderDesc::new(ground_shape)
-            .translation(-Vector2::y())
-            .build(&mut world);
+        let mut parts = Vec::new();
+
+        parts.push(part::Part::Shape(
+            part::ShapeBuilder::rectangle(25.0, 1.0)
+                .position(-Vector2::y())
+                .build(),
+        ));
 
         let rad = 1.0;
-
-        let cuboid = ShapeHandle::new(Cuboid::new(Vector2::repeat(rad)));
-        let collider_desc = ColliderDesc::new(cuboid).density(1.0);
-        let mut rb_desc = RigidBodyDesc::new().collider(&collider_desc);
 
         let width = 5;
         let height = 10;
@@ -53,37 +53,13 @@ impl GameState {
                 let x = fj * 5.0 * rad - centerx;
                 let y = -fi * 5.0 * rad - 0.04 - rad;
 
-                rb_desc
-                    .set_translation(Vector2::new(x, y))
-                    .build(&mut world);
+                parts.push(part::Part::Shape(
+                    part::ShapeBuilder::circle(rad)
+                        .position(Vector2::new(x, y))
+                        .build(),
+                ));
             }
         }
-
-        let parts = world
-            .colliders()
-            .filter_map(|collider| {
-                let shape = collider.shape().as_ref();
-                let margin = collider.margin();
-                if let Some(shape) = shape.as_shape::<Ball<f64>>() {
-                    Some(part::Part::Circle(part::Circle::new(
-                        collider.handle(),
-                        &world,
-                        shape.radius() + margin,
-                    )))
-                } else if let Some(shape) = shape.as_shape::<Cuboid<f64>>() {
-                    let he = shape.half_extents();
-                    Some(part::Part::Rectangle(part::Rectangle::new(
-                        collider.handle(),
-                        &world,
-                        he.x + margin,
-                        he.y + margin,
-                    )))
-                } else {
-                    log::warn!("Unknown shape");
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
 
         GameState {
             camera,
@@ -94,6 +70,7 @@ impl GameState {
             grabbed_object: None,
             grabbed_object_constraint: None,
             middle_mouse_down: false,
+            running: false,
         }
     }
 
@@ -104,8 +81,10 @@ impl GameState {
     fn zoom_out(&mut self) {
         self.camera.set_zoom(self.camera.zoom() * 3.0 / 4.0)
     }
+}
 
-    pub fn update(&mut self) {
+impl State for GameState {
+    fn update(&mut self, dt: f64) {
         self.world.step();
 
         for part in &mut self.parts {
@@ -113,26 +92,13 @@ impl GameState {
         }
     }
 
-    pub fn draw(
-        &self,
-        ctx: graphics::Context,
-        gfx: &mut GlGraphics,
-        glyphs: &mut GlyphCache<'static>,
-    ) {
+    fn draw(&self, ctx: graphics::Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>) {
         for part in &self.parts {
             part.draw(&self.camera, ctx, gfx);
         }
-
-        let _ = graphics::Text::new(12).draw(
-            "text: &str",
-            glyphs,
-            &DrawState::default(),
-            ctx.trans(0.0, 0.0).transform,
-            gfx,
-        );
     }
 
-    pub fn key(&mut self, key: Key, pressed: bool) {
+    fn key(&mut self, key: Key, pressed: bool) {
         match key {
             Key::A | Key::Left if pressed => self.camera.trans(&Vector2::new(-10.0, 0.0)),
             Key::D | Key::Right if pressed => self.camera.trans(&Vector2::new(10.0, 0.0)),
@@ -140,11 +106,22 @@ impl GameState {
             Key::S | Key::Dollar if pressed => self.camera.trans(&Vector2::new(0.0, 10.0)),
             Key::Plus | Key::NumPadPlus if pressed => self.zoom_in(),
             Key::Minus | Key::NumPadMinus if pressed => self.zoom_out(),
+            Key::Space if pressed => {
+                self.running = !self.running;
+                log::trace!("Running: {}", self.running);
+                for part in &mut self.parts {
+                    if self.running {
+                        part.create(&self.camera, &mut self.world);
+                    } else {
+                        part.destroy(&mut self.world);
+                    }
+                }
+            }
             _ => {}
         }
     }
 
-    pub fn mouse(&mut self, button: MouseButton, pressed: bool) {
+    fn mouse(&mut self, button: MouseButton, pressed: bool) {
         self.middle_mouse_down = button == MouseButton::Middle && pressed;
         match button {
             MouseButton::Left if pressed => {
@@ -181,10 +158,10 @@ impl GameState {
         }
     }
 
-    pub fn mouse_cursor(&mut self, x: f64, y: f64) {
+    fn mouse_cursor(&mut self, x: f64, y: f64) {
         self.mouse_position.x = x;
         self.mouse_position.y = y;
-        let point = self.camera.to_local(&self.mouse_position);
+        let point = self.camera.to_local(self.mouse_position);
         self.mouse_position_world.x = point.x;
         self.mouse_position_world.y = point.y;
 
@@ -199,7 +176,7 @@ impl GameState {
         }
     }
 
-    pub fn mouse_relative(&mut self, x: f64, y: f64) {
+    fn mouse_relative(&mut self, x: f64, y: f64) {
         if self.middle_mouse_down && self.grabbed_object.is_none() {
             const MAX_MOVEMENT: f64 = 0.2;
             let x = if x > 0.0 {
@@ -220,7 +197,7 @@ impl GameState {
         }
     }
 
-    pub fn mouse_scroll(&mut self, x: f64, y: f64) {
+    fn mouse_scroll(&mut self, x: f64, y: f64) {
         if y < 0.0 {
             self.zoom_out();
         } else {
@@ -228,7 +205,7 @@ impl GameState {
         }
     }
 
-    pub fn resize(&mut self, width: f64, height: f64) {
+    fn resize(&mut self, width: f64, height: f64) {
         self.camera.set_size(width, height);
     }
 }

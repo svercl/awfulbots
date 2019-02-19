@@ -24,6 +24,10 @@ impl Camera {
         self.zoom = zoom;
     }
 
+    pub fn size(&self) -> &Vector2<f64> {
+        &self.size
+    }
+
     pub fn set_size(&mut self, width: f64, height: f64) {
         self.size.x = width;
         self.size.y = height;
@@ -33,11 +37,11 @@ impl Camera {
         self.position += amount;
     }
 
-    pub fn to_local(&self, global: &Vector2<f64>) -> Vector2<f64> {
+    pub fn to_local(&self, global: Vector2<f64>) -> Vector2<f64> {
         self.position + (global - self.size / 2.0) / self.zoom
     }
 
-    pub fn to_global(&self, local: &Vector2<f64>) -> Vector2<f64> {
+    pub fn to_global(&self, local: Vector2<f64>) -> Vector2<f64> {
         self.zoom * (local - self.position) + self.size / 2.0
     }
 }
