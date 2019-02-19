@@ -4,6 +4,7 @@ use piston::event_loop::{EventLoop, EventSettings, Events};
 use piston::input::{Button, ButtonArgs, ButtonState, Event, Input, Loop, Motion};
 use piston::window::{AdvancedWindow, WindowSettings};
 
+mod action;
 mod camera;
 mod gui;
 mod limits;
@@ -38,12 +39,8 @@ fn main() {
     let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
     let mut gl = GlGraphics::new(opengl);
-    let mut glyphs = GlyphCache::from_bytes(
-        include_bytes!("../assets/ClearSans-Regular.ttf"),
-        (),
-        TextureSettings::new(),
-    )
-    .unwrap();
+    let mut glyphs =
+        GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new()).unwrap();
 
     let mut fps = fps_counter::FPSCounter::new();
 
