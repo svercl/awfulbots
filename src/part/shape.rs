@@ -62,17 +62,15 @@ impl Shape {
     }
 
     pub fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
-        let position = if self.handle.is_some() {
-            self.world_iso.translation.vector
+        let (position, rotation) = if self.handle.is_some() {
+            (
+                self.world_iso.translation.vector,
+                self.world_iso.rotation.angle(),
+            )
         } else {
-            self.iso.translation.vector
+            (self.iso.translation.vector, self.iso.rotation.angle())
         };
         let position = camera.to_global(position);
-        let rotation = if self.handle.is_some() {
-            self.world_iso.rotation.angle()
-        } else {
-            self.iso.rotation.angle()
-        };
         let xf = ctx
             .trans(position.x, position.y)
             .rot_rad(rotation)
