@@ -8,12 +8,12 @@ mod camera;
 mod gui;
 mod limits;
 mod part;
-mod state;
+mod screen;
 mod util;
 
 use camera::Camera;
 use gui::Gui;
-use state::{GameState, State};
+use screen::{GameScreen, Screen};
 
 const INITIAL_WINDOW_WIDTH: f64 = 1280.0;
 const INITIAL_WINDOW_HEIGHT: f64 = 720.0;
@@ -34,7 +34,7 @@ fn main() {
             .unwrap();
 
     let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
-    let mut current_state: Box<State> = Box::new(GameState::new(camera));
+    let mut current_screen: Box<Screen> = Box::new(GameScreen::new(camera));
     let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
     let mut gl = GlGraphics::new(opengl);
@@ -54,22 +54,24 @@ fn main() {
         match event {
             Event::Input(e) => match e {
                 Input::Button(ButtonArgs { state, button, .. }) => match button {
-                    Button::Keyboard(key) => current_state.key(key, state == ButtonState::Press),
-                    Button::Mouse(mouse) => current_state.mouse(mouse, state == ButtonState::Press),
+                    Button::Keyboard(key) => current_screen.key(key, state == ButtonState::Press),
+                    Button::Mouse(mouse) => {
+                        current_screen.mouse(mouse, state == ButtonState::Press)
+                    }
                     _ => {}
                 },
                 Input::Move(motion) => match motion {
-                    Motion::MouseCursor(x, y) => current_state.mouse_cursor(x, y),
-                    Motion::MouseRelative(x, y) => current_state.mouse_relative(x, y),
-                    Motion::MouseScroll(x, y) => current_state.mouse_scroll(x, y),
+                    Motion::MouseCursor(x, y) => current_screen.mouse_cursor(x, y),
+                    Motion::MouseRelative(x, y) => current_screen.mouse_relative(x, y),
+                    Motion::MouseScroll(x, y) => current_screen.mouse_scroll(x, y),
                     _ => {}
                 },
-                Input::Resize(width, height) => current_state.resize(width, height),
+                Input::Resize(width, height) => current_screen.resize(width, height),
                 _ => {}
             },
             Event::Loop(e) => match e {
                 Loop::Update(args) => {
-                    current_state.update(args.dt);
+                    current_screen.update(args.dt);
                     gui.update();
                     window.set_title(format!(
                         "awfulbots | fps: {}, dt: {:.4}",
@@ -80,7 +82,7 @@ fn main() {
                 Loop::Render(args) => {
                     gl.draw(args.viewport(), |ctx, gfx| {
                         graphics::clear([0.2, 0.4, 0.6, 1.0], gfx);
-                        current_state.draw(ctx, gfx, &mut glyphs);
+                        current_screen.draw(ctx, gfx, &mut glyphs);
                         gui.draw(ctx, gfx);
                     });
                 }

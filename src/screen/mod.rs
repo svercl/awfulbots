@@ -5,16 +5,16 @@ use piston::input::{Key, MouseButton};
 mod game;
 mod menu;
 
-pub use self::game::GameState;
-pub use self::menu::MenuState;
+pub use self::game::GameScreen;
+pub use self::menu::MenuScreen;
 
-pub enum StateTransition {
+pub enum ScreenTransition {
     Continue,
-    Change(Box<State>),
+    Change(Box<Screen>),
     Quit,
 }
 
-pub trait State {
+pub trait Screen {
     // These MUST be implemented
     fn update(&mut self, dt: f64);
     fn draw(&self, ctx: Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>);

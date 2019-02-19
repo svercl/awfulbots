@@ -1,6 +1,6 @@
 use crate::camera::Camera;
 use crate::part;
-use crate::state::State;
+use crate::screen::Screen;
 use crate::util;
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
@@ -9,7 +9,7 @@ use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
 
-pub struct GameState {
+pub struct GameScreen {
     camera: Camera,
     world: World<f64>,
     parts: Vec<part::Part>,
@@ -21,7 +21,7 @@ pub struct GameState {
     running: bool,
 }
 
-impl GameState {
+impl GameScreen {
     pub fn new(camera: Camera) -> Self {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
@@ -31,6 +31,7 @@ impl GameState {
         parts.push(part::Part::Shape(
             part::ShapeBuilder::rectangle(25.0, 1.0)
                 .position(-Vector2::y())
+                .rotation(0.7)
                 .ground(true)
                 .build(),
         ));
@@ -58,7 +59,7 @@ impl GameState {
             }
         }
 
-        GameState {
+        GameScreen {
             camera,
             world,
             parts,
@@ -80,7 +81,7 @@ impl GameState {
     }
 }
 
-impl State for GameState {
+impl Screen for GameScreen {
     fn update(&mut self, dt: f64) {
         self.world.step();
 
