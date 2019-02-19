@@ -22,9 +22,6 @@ fn main() {
     // initialize logging facility
     env_logger::init();
 
-    let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
-    let mut current_state: Box<State> = Box::new(GameState::new(camera));
-
     // this is a great middle ground
     let opengl = OpenGL::V3_2;
 
@@ -35,9 +32,12 @@ fn main() {
             .resizable(false)
             .build()
             .unwrap();
-    let mut gl = GlGraphics::new(opengl);
+
+    let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
+    let mut current_state: Box<State> = Box::new(GameState::new(camera));
     let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
+    let mut gl = GlGraphics::new(opengl);
     let mut glyphs = GlyphCache::from_bytes(
         include_bytes!("../assets/ClearSans-Regular.ttf"),
         (),
