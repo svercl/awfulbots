@@ -80,36 +80,5 @@ fn main() {
             },
             _ => {}
         }
-
-        // event.update(|_| {
-        //     state.update();
-        //     // gui.update();
-        //     window.set_title(format!("awfulbots | fps: {}", fps.tick()));
-        // });
-
-        // event.render(|args| {
-        //     gl.draw(args.viewport(), |c, g| {
-        //         graphics::clear([0.2, 0.4, 0.6, 1.0], g);
-        //         state.draw(c, g);
-        //         // gui.draw(c, g);
-        //     });
-        // });
-
-        // event.press(|button| match button {
-        //     Button::Keyboard(key) => state.key(key, true),
-        //     Button::Mouse(button) => state.mouse(button, true),
-        //     _ => {}
-        // });
-
-        // event.release(|button| match button {
-        //     Button::Keyboard(key) => state.key(key, false),
-        //     Button::Mouse(button) => state.mouse(button, false),
-        //     _ => {}
-        // });
-
-        // event.mouse_cursor(|x, y| state.mouse_cursor(x, y));
-        // event.mouse_relative(|x, y| state.mouse_relative(x, y));
-        // event.mouse_scroll(|x, y| state.mouse_scroll(x, y));
-        // event.resize(|width, height| state.resize(width, height));
     }
 }
