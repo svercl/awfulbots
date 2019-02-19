@@ -17,17 +17,13 @@ pub struct Shape {
     kind: ShapeKind,
     iso: Isometry2<f64>,
     world_iso: Isometry2<f64>,
-    handle: Option<BodyHandle>,
+    body_handle: Option<BodyHandle>,
     color: [f32; 4],
     ground: bool,
 }
 
 impl Shape {
     pub fn create(&mut self, world: &mut World<f64>) {
-        if self.handle.is_some() {
-            log::trace!("This shape is already initialized.");
-            return;
-        }
         let shape_handle = match self.kind {
             ShapeKind::Circle { radius } => ShapeHandle::new(Ball::new(radius)),
             ShapeKind::Rectangle {
@@ -45,27 +41,26 @@ impl Shape {
             })
             .position(self.iso)
             .build(world);
-        self.handle = Some(rigid_body.handle());
+        self.body_handle = Some(rigid_body.handle());
     }
 
     pub fn destroy(&mut self, world: &mut World<f64>) {
-        if self.handle.is_none() {
-            log::trace!("This shape doesn't exist!");
-            return;
+        if let Some(handle) = self.body_handle {
+            world.remove_bodies(&[handle]);
+            self.body_handle = None;
         }
-        let body = self.handle.unwrap();
-        world.remove_bodies(&[body]);
-        self.handle = None;
     }
 
     pub fn update(&mut self, world: &World<f64>) {
-        if let Some(handle) = self.handle {
-            self.world_iso = *world.rigid_body(handle).unwrap().position();
+        if let Some(handle) = self.body_handle {
+            if let Some(body) = world.rigid_body(handle) {
+                self.world_iso = *body.position();
+            }
         }
     }
 
     pub fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
-        let (position, rotation) = if self.handle.is_some() {
+        let (position, rotation) = if self.body_handle.is_some() {
             (
                 self.world_iso.translation.vector,
                 self.world_iso.rotation.angle(),
@@ -178,7 +173,7 @@ impl ShapeBuilder {
             kind: self.kind,
             iso: Isometry2::new(self.position, self.rotation),
             world_iso: Isometry2::identity(),
-            handle: None,
+            body_handle: None,
             color: self.color,
             ground: self.ground,
         }
