@@ -2,3 +2,4 @@
 -Custom theme for GUI: not started
 -Opening a titlebar menu causes game to not redraw properly
 -Add proper bounds checking for drawing shapes
+-Drawing rectangles is not quite right
