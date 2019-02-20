@@ -1,4 +1,5 @@
 use crate::camera::Camera;
+use crate::gui::GuiEvent;
 use crate::part;
 use crate::screen::Screen;
 use crate::util;
@@ -8,6 +9,7 @@ use nphysics2d::object::BodyPartHandle;
 use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
+use std::sync::mpsc;
 
 pub struct GameScreen {
     camera: Camera,
@@ -19,10 +21,11 @@ pub struct GameScreen {
     grabbed_object_constraint: Option<ConstraintHandle>,
     middle_mouse_down: bool,
     running: bool,
+    gui_rx: mpsc::Receiver<GuiEvent>,
 }
 
 impl GameScreen {
-    pub fn new(camera: Camera) -> Self {
+    pub fn new(camera: Camera, gui_rx: mpsc::Receiver<GuiEvent>) -> Self {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
 
@@ -69,6 +72,7 @@ impl GameScreen {
             grabbed_object_constraint: None,
             middle_mouse_down: false,
             running: false,
+            gui_rx,
         }
     }
 
@@ -87,6 +91,10 @@ impl Screen for GameScreen {
 
         for part in &mut self.parts {
             part.update(&self.world);
+        }
+
+        if let Some(e) = self.gui_rx.try_recv().ok() {
+            println!("Got event from gui: {:?}", e);
         }
     }
 

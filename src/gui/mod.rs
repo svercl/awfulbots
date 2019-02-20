@@ -3,48 +3,19 @@ use conrod_core::image::Map;
 use conrod_core::text::rt::Rect;
 use conrod_core::text::GlyphCache;
 use conrod_core::widget::{self, Widget};
-use conrod_core::{
-    widget_ids, Color, Colorable, Labelable, Positionable, Scalar, Sizeable, Ui, UiBuilder,
-};
+use conrod_core::{Color, Colorable, Labelable, Positionable, Scalar, Sizeable, Ui, UiBuilder};
 use opengl_graphics::{Format, GlGraphics, Texture, TextureSettings, UpdateTexture};
 use piston::input::GenericEvent;
+use std::sync::mpsc;
 
 const SCALE_TOLERANCE: f32 = 0.1;
 const POSITION_TOLERANCE: f32 = 0.1;
 
-widget_ids! {
-    struct Ids {
-        // top row
-        circle_button,
-        rectangle_button,
-        triangle_button,
-        undo_button,
-        redo_button,
-        zoom_in_button,
-        save_button,
-        main_menu_button,
+mod event;
+mod ids;
 
-        // bottom row
-        fixed_joint_button,
-        rotating_joint_button,
-        sliding_joint_button,
-        text_button,
-        paste_button,
-        zoom_out_button,
-        load_button,
-
-        // special
-        play_button,
-
-        canvas,
-        text,
-
-        file,
-        edit,
-        view,
-        extras,
-    }
-}
+pub use self::event::GuiEvent;
+use self::ids::Ids;
 
 // Gui is completely separate from the game
 pub struct Gui {
@@ -64,12 +35,14 @@ pub struct Gui {
     width: f64,
     // the window height
     height: f64,
+    // the sender
+    sender: mpsc::Sender<GuiEvent>,
 }
 
 impl Gui {
-    pub fn new(width: f64, height: f64) -> Self {
+    pub fn new(width: f64, height: f64, sender: mpsc::Sender<GuiEvent>) -> Self {
         let mut ui = UiBuilder::new([width, height]).build();
-        // insert our 
+        // insert our
         ui.fonts
             .insert_from_file("assets/ClearSans-Regular.ttf")
             .unwrap();
@@ -97,6 +70,7 @@ impl Gui {
             image_map: Map::new(),
             width,
             height,
+            sender,
         }
     }
 
@@ -197,6 +171,8 @@ impl Gui {
             .set(self.ids.paste_button, &mut ui)
             .was_clicked()
         {
+            // hopefully this never fails
+            let _ = self.sender.send(GuiEvent::PasteClicked);
             log::trace!("Paste clicked");
         }
 
