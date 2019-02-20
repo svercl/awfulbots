@@ -1,3 +1,4 @@
 -Add a basic GUI: in progress
 -Custom theme for GUI: not started
 -Opening a titlebar menu causes game to not redraw properly
+-Add proper bounds checking for drawing shapes
