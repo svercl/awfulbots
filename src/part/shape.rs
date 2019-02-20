@@ -20,6 +20,7 @@ pub struct Shape {
     body_handle: Option<BodyHandle>,
     color: [f32; 4],
     ground: bool,
+    selected: bool,
 }
 
 impl Shape {
@@ -122,6 +123,7 @@ pub struct ShapeBuilder {
     rotation: f64,
     color: [f32; 4],
     ground: bool,
+    selected: bool,
 }
 
 impl ShapeBuilder {
@@ -132,6 +134,7 @@ impl ShapeBuilder {
             rotation: 0.0,
             color: color::WHITE,
             ground: false,
+            selected: false,
         }
     }
 
@@ -145,11 +148,18 @@ impl ShapeBuilder {
             rotation: 0.0,
             color: color::WHITE,
             ground: false,
+            selected: false,
         }
     }
 
     pub fn position(&mut self, position: Vector2<f64>) -> &mut Self {
         self.position = position;
+        self
+    }
+
+    pub fn position_p(&mut self, position: nalgebra::Point2<f64>) -> &mut Self {
+        self.position.x = position.x;
+        self.position.y = position.y;
         self
     }
 
@@ -168,6 +178,11 @@ impl ShapeBuilder {
         self
     }
 
+    pub fn select(&mut self) -> &mut Self {
+        self.selected = true;
+        self
+    }
+
     pub fn build(&self) -> Shape {
         Shape {
             kind: self.kind,
@@ -176,6 +191,7 @@ impl ShapeBuilder {
             body_handle: None,
             color: self.color,
             ground: self.ground,
+            selected: self.selected,
         }
     }
 }

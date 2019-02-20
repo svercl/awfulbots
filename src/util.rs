@@ -20,3 +20,16 @@ pub fn get_body_at_mouse(world: &World<f64>, point: &Point2<f64>) -> Option<Body
     }
     None
 }
+
+pub fn clamp<T>(val: T, min: T, max: T) -> T
+where
+    T: PartialOrd,
+{
+    if val < min {
+        min
+    } else if val > max {
+        max
+    } else {
+        val
+    }
+}

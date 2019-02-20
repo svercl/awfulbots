@@ -1,9 +1,11 @@
 use crate::action::ActionKind;
 use crate::camera::Camera;
 use crate::gui::GuiEvent;
+use crate::limits;
 use crate::part;
 use crate::screen::Screen;
 use crate::util;
+use graphics::Transformed;
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
 use nphysics2d::object::BodyPartHandle;
@@ -26,6 +28,7 @@ pub struct GameScreen {
     current_action: ActionKind,
     current_action_step: u8,
     first_click: Vector2<f64>,
+    first_click_world: Point2<f64>,
 }
 
 impl GameScreen {
@@ -79,6 +82,7 @@ impl GameScreen {
             current_action: ActionKind::None,
             current_action_step: 0,
             first_click: nalgebra::zero(),
+            first_click_world: Point2::origin(),
         }
     }
 
@@ -124,6 +128,7 @@ impl Screen for GameScreen {
                 // reset the action step and first click
                 self.current_action_step = 0;
                 self.first_click = nalgebra::zero();
+                self.first_click_world = Point2::origin();
                 log::trace!("Starting action: {:?}", self.current_action,);
             }
         }
@@ -158,13 +163,7 @@ impl Screen for GameScreen {
 
         match self.current_action {
             ActionKind::CreatingCircle if self.current_action_step == 1 => {
-                let mouse_position = self.camera.to_local(self.mouse_position);
-                let first_click = self.camera.to_local(self.first_click);
-                let dist = nalgebra::distance(
-                    &nalgebra::Point2::new(mouse_position.x, mouse_position.y),
-                    &nalgebra::Point2::new(first_click.x, first_click.y),
-                );
-                use graphics::Transformed;
+                let dist = nalgebra::distance(&self.mouse_position_world, &self.first_click_world);
                 graphics::Ellipse::new(graphics::color::WHITE).draw(
                     [-dist, -dist, dist * 2.0, dist * 2.0],
                     &graphics::DrawState::default(),
@@ -174,7 +173,18 @@ impl Screen for GameScreen {
                     gfx,
                 );
             }
-            ActionKind::CreatingRectangle => {}
+            ActionKind::CreatingRectangle if self.current_action_step == 1 => {
+                let width = self.mouse_position_world.x - self.first_click_world.x;
+                let height = self.mouse_position_world.y - self.first_click_world.y;
+                graphics::Rectangle::new(graphics::color::WHITE).draw(
+                    [-width, -height, width * 2.0, height * 2.0],
+                    &graphics::DrawState::default(),
+                    ctx.trans(self.first_click.x, self.first_click.y)
+                        .zoom(self.camera.zoom())
+                        .transform,
+                    gfx,
+                );
+            }
             _ => {}
         }
     }
@@ -232,27 +242,54 @@ impl Screen for GameScreen {
                         if self.current_action_step == 0 {
                             self.current_action_step += 1;
                             self.first_click = self.mouse_position;
+                            self.first_click_world = self.mouse_position_world;
                             log::trace!(
                                 "Setting first click to {},{}",
                                 self.first_click.x,
                                 self.first_click.y
                             );
                         } else if self.current_action_step == 1 {
-                            let mouse_position = self.camera.to_local(self.mouse_position);
-                            let first_click = self.camera.to_local(self.first_click);
-                            let circle = part::Part::Shape(
-                                part::ShapeBuilder::circle(nalgebra::distance(
-                                    &nalgebra::Point2::new(mouse_position.x, mouse_position.y),
-                                    &nalgebra::Point2::new(first_click.x, first_click.y),
-                                ))
-                                .position(self.camera.to_local(self.first_click))
-                                .build(),
-                            );
-                            self.parts.push(circle);
+                            let circle = part::ShapeBuilder::circle(nalgebra::distance(
+                                &self.mouse_position_world,
+                                &self.first_click_world,
+                            ))
+                            // temporary workaround
+                            .position_p(self.first_click_world)
+                            .build();
+                            self.parts.push(part::Part::Shape(circle));
                             self.current_action = ActionKind::None;
                         }
                     }
-                    ActionKind::CreatingRectangle => {}
+                    ActionKind::CreatingRectangle => {
+                        if self.current_action_step == 0 {
+                            self.current_action_step += 1;
+                            self.first_click = self.mouse_position;
+                            self.first_click_world = self.mouse_position_world;
+                            log::trace!(
+                                "Setting first click to {},{}",
+                                self.first_click.x,
+                                self.first_click.y
+                            );
+                        } else if self.current_action_step == 1 {
+                            let width = self.mouse_position_world.x - self.first_click_world.x;
+                            let height = self.mouse_position_world.y - self.first_click_world.y;
+                            let width = util::clamp(
+                                width,
+                                limits::MIN_RECTANGLE_SIZE,
+                                limits::MAX_RECTANGLE_SIZE,
+                            );
+                            let height = util::clamp(
+                                height,
+                                limits::MIN_RECTANGLE_SIZE,
+                                limits::MAX_RECTANGLE_SIZE,
+                            );
+                            let rectangle = part::ShapeBuilder::rectangle(width, height)
+                                .position_p(self.first_click_world)
+                                .build();
+                            self.parts.push(part::Part::Shape(rectangle));
+                            self.current_action = ActionKind::None;
+                        }
+                    }
                     _ => {}
                 }
             }
