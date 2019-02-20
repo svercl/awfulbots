@@ -88,22 +88,30 @@ impl Gui {
             .h(80.0)
             .top_left()
             .set(self.ids.canvas, &mut ui);
-        widget::Button::new()
+        if widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
             .label("Circle")
             .parent(self.ids.canvas)
             .top_left_with_margins(BUTTON_MARGIN + 25.0, BUTTON_MARGIN)
             .wh([80.0, 20.0])
-            .set(self.ids.circle_button, &mut ui);
-        widget::Button::new()
+            .set(self.ids.circle_button, &mut ui)
+            .was_clicked()
+        {
+            let _ = self.sender.send(GuiEvent::CircleClicked);
+        }
+        if widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
             .label("Rectangle")
             .parent(self.ids.canvas)
             .right_from(self.ids.circle_button, BUTTON_MARGIN)
             .wh_of(self.ids.circle_button)
-            .set(self.ids.rectangle_button, &mut ui);
+            .set(self.ids.rectangle_button, &mut ui)
+            .was_clicked()
+        {
+            let _ = self.sender.send(GuiEvent::RectangleClicked);
+        }
         widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
@@ -173,17 +181,20 @@ impl Gui {
         {
             // hopefully this never fails
             let _ = self.sender.send(GuiEvent::PasteClicked);
-            log::trace!("Paste clicked");
         }
 
-        widget::Button::new()
+        if widget::Button::new()
             .color(color::RED)
             .label_font_size(20)
             .label("Play!")
             .parent(self.ids.canvas)
             .bottom_right_with_margin(BUTTON_MARGIN)
             .wh([70.0, 40.0])
-            .set(self.ids.play_button, &mut ui);
+            .set(self.ids.play_button, &mut ui)
+            .was_clicked()
+        {
+            let _ = self.sender.send(GuiEvent::PlayClicked);
+        }
 
         if let Some(index) = widget::DropDownList::new(
             &[

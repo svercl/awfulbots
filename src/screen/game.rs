@@ -1,3 +1,4 @@
+use crate::action::ActionKind;
 use crate::camera::Camera;
 use crate::gui::GuiEvent;
 use crate::part;
@@ -22,6 +23,9 @@ pub struct GameScreen {
     middle_mouse_down: bool,
     running: bool,
     gui_rx: mpsc::Receiver<GuiEvent>,
+    current_action: ActionKind,
+    current_action_step: u8,
+    first_click: Vector2<f64>,
 }
 
 impl GameScreen {
@@ -34,7 +38,6 @@ impl GameScreen {
         parts.push(part::Part::Shape(
             part::ShapeBuilder::rectangle(25.0, 1.0)
                 .position(-Vector2::y())
-                .rotation(0.7)
                 .ground(true)
                 .build(),
         ));
@@ -73,6 +76,9 @@ impl GameScreen {
             middle_mouse_down: false,
             running: false,
             gui_rx,
+            current_action: ActionKind::None,
+            current_action_step: 0,
+            first_click: nalgebra::zero(),
         }
     }
 
@@ -94,7 +100,32 @@ impl Screen for GameScreen {
         }
 
         if let Some(e) = self.gui_rx.try_recv().ok() {
-            println!("Got event from gui: {:?}", e);
+            match e {
+                GuiEvent::CircleClicked if !self.running => {
+                    self.current_action = ActionKind::CreatingCircle
+                }
+                GuiEvent::RectangleClicked if !self.running => {
+                    self.current_action = ActionKind::CreatingRectangle
+                }
+                GuiEvent::PlayClicked => {
+                    self.running = !self.running;
+                    for part in &mut self.parts {
+                        if self.running {
+                            part.create(&mut self.world);
+                        } else {
+                            part.destroy(&mut self.world);
+                        }
+                    }
+                }
+                f => log::trace!("Got event from GUI: {:?}", f),
+            }
+
+            if self.current_action != ActionKind::None {
+                // reset the action step and first click
+                self.current_action_step = 0;
+                self.first_click = nalgebra::zero();
+                log::trace!("Starting action: {:?}", self.current_action,);
+            }
         }
     }
 
@@ -123,6 +154,28 @@ impl Screen for GameScreen {
                     gfx,
                 );
             }
+        }
+
+        match self.current_action {
+            ActionKind::CreatingCircle if self.current_action_step == 1 => {
+                let mouse_position = self.camera.to_local(self.mouse_position);
+                let first_click = self.camera.to_local(self.first_click);
+                let dist = nalgebra::distance(
+                    &nalgebra::Point2::new(mouse_position.x, mouse_position.y),
+                    &nalgebra::Point2::new(first_click.x, first_click.y),
+                );
+                use graphics::Transformed;
+                graphics::Ellipse::new(graphics::color::WHITE).draw(
+                    [-dist, -dist, dist * 2.0, dist * 2.0],
+                    &graphics::DrawState::default(),
+                    ctx.trans(self.first_click.x, self.first_click.y)
+                        .zoom(self.camera.zoom())
+                        .transform,
+                    gfx,
+                );
+            }
+            ActionKind::CreatingRectangle => {}
+            _ => {}
         }
     }
 
@@ -172,6 +225,35 @@ impl Screen for GameScreen {
                         300.0 * body_mass,
                     );
                     self.grabbed_object_constraint = Some(self.world.add_constraint(joint));
+                }
+
+                match self.current_action {
+                    ActionKind::CreatingCircle => {
+                        if self.current_action_step == 0 {
+                            self.current_action_step += 1;
+                            self.first_click = self.mouse_position;
+                            log::trace!(
+                                "Setting first click to {},{}",
+                                self.first_click.x,
+                                self.first_click.y
+                            );
+                        } else if self.current_action_step == 1 {
+                            let mouse_position = self.camera.to_local(self.mouse_position);
+                            let first_click = self.camera.to_local(self.first_click);
+                            let circle = part::Part::Shape(
+                                part::ShapeBuilder::circle(nalgebra::distance(
+                                    &nalgebra::Point2::new(mouse_position.x, mouse_position.y),
+                                    &nalgebra::Point2::new(first_click.x, first_click.y),
+                                ))
+                                .position(self.camera.to_local(self.first_click))
+                                .build(),
+                            );
+                            self.parts.push(circle);
+                            self.current_action = ActionKind::None;
+                        }
+                    }
+                    ActionKind::CreatingRectangle => {}
+                    _ => {}
                 }
             }
             MouseButton::Left if !pressed => {
