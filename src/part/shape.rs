@@ -9,8 +9,18 @@ use opengl_graphics::GlGraphics;
 
 #[derive(Copy, Clone)]
 pub enum ShapeKind {
-    Circle { radius: f64 },
-    Rectangle { half_width: f64, half_height: f64 },
+    Circle {
+        radius: f64,
+    },
+    Rectangle {
+        half_width: f64,
+        half_height: f64,
+    },
+    Triangle {
+        p1: Vector2<f64>,
+        p2: Vector2<f64>,
+        p3: Vector2<f64>,
+    },
 }
 
 pub struct Shape {
@@ -31,6 +41,15 @@ impl Shape {
                 half_width,
                 half_height,
             } => ShapeHandle::new(Cuboid::new(Vector2::new(half_width, half_height))),
+            ShapeKind::Triangle { p1, p2, p3 } => {
+                use nalgebra::Point2;
+                use ncollide2d::shape::ConvexPolygon;
+                let points = &[p1, p2, p3]
+                    .iter()
+                    .map(|p| Point2::new(p.x, p.y))
+                    .collect::<Vec<_>>();
+                ShapeHandle::new(ConvexPolygon::try_from_points(&points).expect("FIXME"))
+            }
         };
         let collider = ColliderDesc::new(shape_handle).density(1.0);
         let rigid_body = RigidBodyDesc::new()
@@ -113,6 +132,14 @@ impl Shape {
                         gfx,
                     );
             }
+            ShapeKind::Triangle { p1, p2, p3 } => {
+                graphics::Polygon::new(self.color).draw(
+                    &[[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]],
+                    &graphics::DrawState::default(),
+                    xf,
+                    gfx,
+                );
+            }
         }
     }
 }
@@ -144,6 +171,17 @@ impl ShapeBuilder {
                 half_width,
                 half_height,
             },
+            position: nalgebra::zero(),
+            rotation: 0.0,
+            color: color::WHITE,
+            ground: false,
+            selected: false,
+        }
+    }
+
+    pub fn triangle(p1: Vector2<f64>, p2: Vector2<f64>, p3: Vector2<f64>) -> Self {
+        ShapeBuilder {
+            kind: ShapeKind::Triangle { p1, p2, p3 },
             position: nalgebra::zero(),
             rotation: 0.0,
             color: color::WHITE,

@@ -112,14 +112,18 @@ impl Gui {
         {
             let _ = self.sender.send(GuiEvent::RectangleClicked);
         }
-        widget::Button::new()
+        if widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
             .label("Triangle")
             .parent(self.ids.canvas)
             .right_from(self.ids.rectangle_button, BUTTON_MARGIN)
             .wh([80.0, 20.0])
-            .set(self.ids.triangle_button, &mut ui);
+            .set(self.ids.triangle_button, &mut ui)
+            .was_clicked()
+        {
+            let _ = self.sender.send(GuiEvent::TriangleClicked);
+        }
         widget::Button::new()
             .color(UTILITY_BUTTON_COLOR)
             .label_font_size(12)

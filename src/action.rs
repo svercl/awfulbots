@@ -4,4 +4,5 @@ pub enum ActionKind {
     None,
     CreatingCircle,
     CreatingRectangle,
+    CreatingTriangle,
 }
