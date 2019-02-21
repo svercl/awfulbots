@@ -97,6 +97,28 @@ impl GameScreen {
     fn zoom_out(&mut self) {
         self.camera.set_zoom(self.camera.zoom() * 3.0 / 4.0)
     }
+
+    fn start(&mut self) {
+        if self.running {
+            log::warn!("Game already running.");
+            return;
+        }
+        self.running = true;
+        for part in &mut self.parts {
+            part.create(&mut self.world);
+        }
+    }
+
+    fn stop(&mut self) {
+        if !self.running {
+            log::warn!("Game not running.");
+            return;
+        }
+        self.running = false;
+        for part in &mut self.parts {
+            part.destroy(&mut self.world);
+        }
+    }
 }
 
 impl Screen for GameScreen {
@@ -118,16 +140,8 @@ impl Screen for GameScreen {
                 GuiEvent::TriangleClicked if !self.running => {
                     self.current_action = ActionKind::CreatingTriangle;
                 }
-                GuiEvent::PlayClicked => {
-                    self.running = !self.running;
-                    for part in &mut self.parts {
-                        if self.running {
-                            part.create(&mut self.world);
-                        } else {
-                            part.destroy(&mut self.world);
-                        }
-                    }
-                }
+                GuiEvent::PlayClicked => self.start(),
+                GuiEvent::StopClicked => self.stop(),
                 f => log::trace!("Got event from GUI: {:?}", f),
             }
 
@@ -225,13 +239,10 @@ impl Screen for GameScreen {
             Key::Plus | Key::NumPadPlus if pressed => self.zoom_in(),
             Key::Minus | Key::NumPadMinus if pressed => self.zoom_out(),
             Key::Space if pressed => {
-                self.running = !self.running;
-                for part in &mut self.parts {
-                    if self.running {
-                        part.create(&mut self.world);
-                    } else {
-                        part.destroy(&mut self.world);
-                    }
+                if self.running {
+                    self.stop();
+                } else {
+                    self.start();
                 }
             }
             _ => {}

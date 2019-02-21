@@ -42,7 +42,6 @@ pub struct Gui {
 impl Gui {
     pub fn new(width: f64, height: f64, sender: mpsc::Sender<GuiEvent>) -> Self {
         let mut ui = UiBuilder::new([width, height]).build();
-        // insert our
         ui.fonts
             .insert_from_file("assets/ClearSans-Regular.ttf")
             .unwrap();
@@ -199,6 +198,18 @@ impl Gui {
         {
             let _ = self.sender.send(GuiEvent::PlayClicked);
         }
+        if widget::Button::new()
+            .color(color::RED)
+            .label_font_size(12)
+            .label("Stop")
+            .parent(self.ids.canvas)
+            .bottom_right_with_margin(BUTTON_MARGIN)
+            .wh([70.0, 40.0])
+            .set(self.ids.stop_button, &mut ui)
+            .was_clicked()
+        {
+            let _ = self.sender.send(GuiEvent::StopClicked);
+        }
 
         if let Some(index) = widget::DropDownList::new(
             &[
@@ -218,7 +229,18 @@ impl Gui {
         .wh([100.0, 20.0])
         .set(self.ids.file, &mut ui)
         {
-            log::trace!("File: Selected index {}", index);
+            let ev = match index {
+                0 => Some(GuiEvent::FileMainMenuClicked),
+                1 => Some(GuiEvent::FileSaveClicked),
+                2 => Some(GuiEvent::FileLoadRobotClicked),
+                3 => Some(GuiEvent::FileLoadAndInsertClicked),
+                4 => Some(GuiEvent::FileLoadReplayClicked),
+                5 => Some(GuiEvent::FileLoadChallengeClicked),
+                _ => None,
+            };
+            if let Some(ev) = ev {
+                let _ = self.sender.send(ev);
+            }
         }
 
         if let Some(index) = widget::DropDownList::new(
@@ -243,7 +265,22 @@ impl Gui {
         .wh([100.0, 20.0])
         .set(self.ids.edit, &mut ui)
         {
-            log::trace!("Edit: Selected index {}", index);
+            let ev = match index {
+                0 => Some(GuiEvent::EditChangeSettingsClicked),
+                1 => Some(GuiEvent::EditClearAllClicked),
+                2 => Some(GuiEvent::EditUndoClicked),
+                3 => Some(GuiEvent::EditRedoClicked),
+                4 => Some(GuiEvent::EditCutClicked),
+                5 => Some(GuiEvent::EditCopyClicked),
+                6 => Some(GuiEvent::EditPasteClicked),
+                7 => Some(GuiEvent::EditDeleteClicked),
+                8 => Some(GuiEvent::EditMoveToFrontClicked),
+                9 => Some(GuiEvent::EditMoveToBackClicked),
+                _ => None,
+            };
+            if let Some(ev) = ev {
+                let _ = self.sender.send(ev);
+            }
         }
 
         // TODO: Add `Snap to center` `Show joints` `Show colors` `Show outlines` `Center on selection`
@@ -255,7 +292,14 @@ impl Gui {
             .wh([100.0, 20.0])
             .set(self.ids.view, &mut ui)
         {
-            log::trace!("View: Selected index {}", index);
+            let ev = match index {
+                0 => Some(GuiEvent::ViewZoomInClicked),
+                1 => Some(GuiEvent::ViewZoomOutClicked),
+                _ => None,
+            };
+            if let Some(ev) = ev {
+                let _ = self.sender.send(ev);
+            }
         }
 
         if let Some(index) = widget::DropDownList::new(
@@ -275,7 +319,16 @@ impl Gui {
         .wh([100.0, 20.0])
         .set(self.ids.extras, &mut ui)
         {
-            log::trace!("Extras: Selected index {}", index);
+            let ev = match index {
+                0 => Some(GuiEvent::ExtrasMirrorHorizontalClicked),
+                1 => Some(GuiEvent::ExtrasMirrorVerticalClicked),
+                2 => Some(GuiEvent::ExtrasScaleClicked),
+                3 => Some(GuiEvent::ExtrasCannonClicked),
+                _ => None,
+            };
+            if let Some(ev) = ev {
+                let _ = self.sender.send(ev);
+            }
         }
     }
 

@@ -23,6 +23,7 @@ widget_ids! {
 
         // special
         play_button,
+        stop_button,
 
         canvas,
         text,

@@ -12,6 +12,5 @@ impl MenuScreen {
 
 impl Screen for MenuScreen {
     fn update(&mut self, dt: f64) {}
-
     fn draw(&self, ctx: Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache) {}
 }

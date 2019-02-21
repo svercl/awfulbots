@@ -13,10 +13,12 @@ pub enum GuiEvent {
     PasteClicked,
 
     PlayClicked,
+    StopClicked,
 
     FileMainMenuClicked,
     FileSaveClicked,
     FileLoadRobotClicked,
+    FileLoadAndInsertClicked,
     FileLoadReplayClicked,
     FileLoadChallengeClicked,
 
