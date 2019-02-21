@@ -37,6 +37,7 @@ pub struct Gui {
     height: f64,
     // the sender
     sender: mpsc::Sender<GuiEvent>,
+    game_running: bool,
 }
 
 impl Gui {
@@ -70,6 +71,7 @@ impl Gui {
             width,
             height,
             sender,
+            game_running: false,
         }
     }
 
@@ -186,29 +188,34 @@ impl Gui {
             let _ = self.sender.send(GuiEvent::PasteClicked);
         }
 
-        if widget::Button::new()
-            .color(color::RED)
-            .label_font_size(20)
-            .label("Play!")
-            .parent(self.ids.canvas)
-            .bottom_right_with_margin(BUTTON_MARGIN)
-            .wh([70.0, 40.0])
-            .set(self.ids.play_button, &mut ui)
-            .was_clicked()
-        {
-            let _ = self.sender.send(GuiEvent::PlayClicked);
-        }
-        if widget::Button::new()
-            .color(color::RED)
-            .label_font_size(12)
-            .label("Stop")
-            .parent(self.ids.canvas)
-            .bottom_right_with_margin(BUTTON_MARGIN)
-            .wh([70.0, 40.0])
-            .set(self.ids.stop_button, &mut ui)
-            .was_clicked()
-        {
-            let _ = self.sender.send(GuiEvent::StopClicked);
+        if self.game_running {
+            if widget::Button::new()
+                .color(color::RED)
+                .label_font_size(20)
+                .label("Stop")
+                .parent(self.ids.canvas)
+                .bottom_right_with_margin(BUTTON_MARGIN)
+                .wh([70.0, 40.0])
+                .set(self.ids.stop_button, &mut ui)
+                .was_clicked()
+            {
+                self.game_running = false;
+                let _ = self.sender.send(GuiEvent::StopClicked);
+            }
+        } else {
+            if widget::Button::new()
+                .color(color::RED)
+                .label_font_size(20)
+                .label("Play!")
+                .parent(self.ids.canvas)
+                .bottom_right_with_margin(BUTTON_MARGIN)
+                .wh([70.0, 40.0])
+                .set(self.ids.play_button, &mut ui)
+                .was_clicked()
+            {
+                self.game_running = true;
+                let _ = self.sender.send(GuiEvent::PlayClicked);
+            }
         }
 
         if let Some(index) = widget::DropDownList::new(
