@@ -78,11 +78,7 @@ fn main() {
                     current_screen.update(args.dt);
                     let (mut ui, ids) = gui.ui_ids();
                     current_screen.update_gui(&mut ui, ids);
-                    window.set_title(format!(
-                        "awfulbots | fps: {}, dt: {:.4}",
-                        fps.tick(),
-                        args.dt
-                    ));
+                    window.set_title(format!("awfulbots | fps: {}", fps.tick(),));
                 }
                 Loop::Render(args) => {
                     gl.draw(args.viewport(), |ctx, gfx| {
