@@ -21,6 +21,8 @@ pub struct GameScreen {
     camera: Camera,
     world: World<f64>,
     parts: Vec<part::Part>,
+    // this just holds a list of the selected parts indices
+    // selected_parts: Vec<usize>,
     mouse_position: Vector2<f64>,
     mouse_position_world: Point2<f64>,
     grabbed_object: Option<BodyPartHandle>,
@@ -604,6 +606,7 @@ impl Screen for GameScreen {
                             let circle = part::ShapeBuilder::circle(radius)
                                 // temporary workaround
                                 .position_p(self.first_click_world)
+                                // .selected(true)
                                 .build();
                             self.parts.push(part::Part::Shape(circle));
                             self.current_action = ActionKind::None;
@@ -650,6 +653,7 @@ impl Screen for GameScreen {
                             };
                             let rectangle = part::ShapeBuilder::rectangle(width, height)
                                 .position_p(self.first_click_world)
+                                // .selected(true)
                                 .build();
                             self.parts.push(part::Part::Shape(rectangle));
                             self.current_action = ActionKind::None;
@@ -689,6 +693,7 @@ impl Screen for GameScreen {
                                     self.mouse_position_world.y,
                                 ),
                             )
+                            // .selected(true)
                             .build();
                             self.parts.push(part::Part::Shape(triangle));
                             self.current_action = ActionKind::None;

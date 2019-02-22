@@ -30,7 +30,8 @@ pub struct Shape {
     body_handle: Option<BodyHandle>,
     color: [f32; 4],
     ground: bool,
-    selected: bool,
+    // cool rust 2018 thingy
+    pub(super) selected: bool,
 }
 
 impl Shape {
@@ -80,6 +81,11 @@ impl Shape {
     }
 
     pub fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
+        let color = if self.selected {
+            self.color.shade(0.8)
+        } else {
+            self.color
+        };
         let (position, rotation) = if self.body_handle.is_some() {
             (
                 self.world_iso.translation.vector,
@@ -97,9 +103,9 @@ impl Shape {
         match self.kind {
             ShapeKind::Circle { radius } => {
                 use graphics::ellipse::Border;
-                graphics::Ellipse::new(self.color)
+                graphics::Ellipse::new(color)
                     .border(Border {
-                        color: self.color.shade(0.5),
+                        color: color.shade(0.5),
                         radius: 0.1,
                     })
                     .resolution(16)
@@ -115,9 +121,9 @@ impl Shape {
                 half_height,
             } => {
                 use graphics::rectangle::Border;
-                graphics::Rectangle::new(self.color)
+                graphics::Rectangle::new(color)
                     .border(Border {
-                        color: self.color.shade(0.5),
+                        color: color.shade(0.5),
                         radius: 0.1,
                     })
                     .draw(
@@ -133,7 +139,7 @@ impl Shape {
                     );
             }
             ShapeKind::Triangle { p1, p2, p3 } => {
-                graphics::Polygon::new(self.color).draw(
+                graphics::Polygon::new(color).draw(
                     &[[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]],
                     &graphics::DrawState::default(),
                     xf,
@@ -216,8 +222,8 @@ impl ShapeBuilder {
         self
     }
 
-    pub fn select(&mut self) -> &mut Self {
-        self.selected = true;
+    pub fn selected(&mut self, selected: bool) -> &mut Self {
+        self.selected = selected;
         self
     }
 

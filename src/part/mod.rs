@@ -34,4 +34,10 @@ impl Part {
             Part::Shape(shape) => shape.destroy(world),
         }
     }
+
+    pub fn set_selected(&mut self, selected: bool) {
+        match self {
+            Part::Shape(shape) => shape.selected = selected,
+        }
+    }
 }
