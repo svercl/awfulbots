@@ -43,7 +43,7 @@ impl GameScreen {
         let mut parts = Vec::new();
 
         parts.push(part::Part::Shape(
-            part::ShapeBuilder::rectangle(25.0, 1.0)
+            part::ShapeBuilder::rectangle(1000.0, 1.0)
                 .position(-Vector2::y())
                 .ground(true)
                 .build(),
