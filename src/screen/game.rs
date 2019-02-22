@@ -434,9 +434,11 @@ impl Screen for GameScreen {
 
         match self.current_action {
             ActionKind::CreatingCircle if self.current_action_step == 1 => {
-                let dist = nalgebra::distance(&self.mouse_position_world, &self.first_click_world);
+                let radius =
+                    nalgebra::distance(&self.mouse_position_world, &self.first_click_world);
+                let radius = util::clamp(radius, limits::MIN_CIRCLE_SIZE, limits::MAX_CIRCLE_SIZE);
                 graphics::Ellipse::new(graphics::color::WHITE).draw(
-                    [-dist, -dist, dist * 2.0, dist * 2.0],
+                    [-radius, -radius, radius * 2.0, radius * 2.0],
                     &graphics::DrawState::default(),
                     ctx.trans(self.first_click.x, self.first_click.y)
                         .zoom(self.camera.zoom())
@@ -446,7 +448,33 @@ impl Screen for GameScreen {
             }
             ActionKind::CreatingRectangle if self.current_action_step == 1 => {
                 let width = self.mouse_position_world.x - self.first_click_world.x;
+                let width = if width > 0.0 {
+                    util::clamp(
+                        width,
+                        limits::MIN_RECTANGLE_SIZE,
+                        limits::MAX_RECTANGLE_SIZE,
+                    )
+                } else {
+                    util::clamp(
+                        width,
+                        -limits::MIN_RECTANGLE_SIZE,
+                        -limits::MAX_RECTANGLE_SIZE,
+                    )
+                };
                 let height = self.mouse_position_world.y - self.first_click_world.y;
+                let height = if height > 0.0 {
+                    util::clamp(
+                        height,
+                        limits::MIN_RECTANGLE_SIZE,
+                        limits::MAX_RECTANGLE_SIZE,
+                    )
+                } else {
+                    util::clamp(
+                        height,
+                        limits::MIN_RECTANGLE_SIZE,
+                        limits::MAX_RECTANGLE_SIZE,
+                    )
+                };
                 graphics::Rectangle::new(graphics::color::WHITE).draw(
                     [-width, -height, width * 2.0, height * 2.0],
                     &graphics::DrawState::default(),
@@ -457,7 +485,7 @@ impl Screen for GameScreen {
                 );
             }
             ActionKind::CreatingTriangle => {
-                if self.current_action_step == 1 {
+                if self.current_action_step >= 1 {
                     graphics::Line::new(graphics::color::BLACK, 1.0).draw(
                         [
                             self.first_click.x,
@@ -466,12 +494,33 @@ impl Screen for GameScreen {
                             self.mouse_position.y,
                         ],
                         &graphics::DrawState::default(),
-                        ctx.trans(self.first_click.x, self.first_click.y)
-                            .zoom(self.camera.zoom())
-                            .transform,
+                        ctx.transform,
                         gfx,
                     );
-                } else if self.current_action_step == 2 {
+                    if self.current_action_step == 2 {
+                        graphics::Line::new(graphics::color::BLACK, 1.0).draw(
+                            [
+                                self.first_click.x,
+                                self.first_click.y,
+                                self.second_click.x,
+                                self.second_click.y,
+                            ],
+                            &graphics::DrawState::default(),
+                            ctx.transform,
+                            gfx,
+                        );
+                        graphics::Line::new(graphics::color::BLACK, 1.0).draw(
+                            [
+                                self.second_click.x,
+                                self.second_click.y,
+                                self.mouse_position.x,
+                                self.mouse_position.y,
+                            ],
+                            &graphics::DrawState::default(),
+                            ctx.transform,
+                            gfx,
+                        );
+                    }
                 }
             }
             _ => {}
@@ -535,13 +584,19 @@ impl Screen for GameScreen {
                                 self.first_click.y
                             );
                         } else if self.current_action_step == 1 {
-                            let circle = part::ShapeBuilder::circle(nalgebra::distance(
+                            let radius = nalgebra::distance(
                                 &self.mouse_position_world,
                                 &self.first_click_world,
-                            ))
-                            // temporary workaround
-                            .position_p(self.first_click_world)
-                            .build();
+                            );
+                            let radius = util::clamp(
+                                radius,
+                                limits::MIN_CIRCLE_SIZE,
+                                limits::MAX_CIRCLE_SIZE,
+                            );
+                            let circle = part::ShapeBuilder::circle(radius)
+                                // temporary workaround
+                                .position_p(self.first_click_world)
+                                .build();
                             self.parts.push(part::Part::Shape(circle));
                             self.current_action = ActionKind::None;
                         }
@@ -558,17 +613,33 @@ impl Screen for GameScreen {
                             );
                         } else if self.current_action_step == 1 {
                             let width = self.mouse_position_world.x - self.first_click_world.x;
+                            let width = if width > 0.0 {
+                                util::clamp(
+                                    width,
+                                    limits::MIN_RECTANGLE_SIZE,
+                                    limits::MAX_RECTANGLE_SIZE,
+                                )
+                            } else {
+                                util::clamp(
+                                    width,
+                                    -limits::MIN_RECTANGLE_SIZE,
+                                    -limits::MAX_RECTANGLE_SIZE,
+                                )
+                            };
                             let height = self.mouse_position_world.y - self.first_click_world.y;
-                            let width = util::clamp(
-                                width,
-                                limits::MIN_RECTANGLE_SIZE,
-                                limits::MAX_RECTANGLE_SIZE,
-                            );
-                            let height = util::clamp(
-                                height,
-                                limits::MIN_RECTANGLE_SIZE,
-                                limits::MAX_RECTANGLE_SIZE,
-                            );
+                            let height = if height > 0.0 {
+                                util::clamp(
+                                    height,
+                                    limits::MIN_RECTANGLE_SIZE,
+                                    limits::MAX_RECTANGLE_SIZE,
+                                )
+                            } else {
+                                util::clamp(
+                                    height,
+                                    limits::MIN_RECTANGLE_SIZE,
+                                    limits::MAX_RECTANGLE_SIZE,
+                                )
+                            };
                             let rectangle = part::ShapeBuilder::rectangle(width, height)
                                 .position_p(self.first_click_world)
                                 .build();
