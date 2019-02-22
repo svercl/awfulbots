@@ -7,7 +7,7 @@ use nphysics2d::object::{BodyHandle, BodyStatus, ColliderDesc, RigidBodyDesc};
 use nphysics2d::world::World;
 use opengl_graphics::GlGraphics;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub enum ShapeKind {
     Circle {
         radius: f64,
@@ -23,11 +23,12 @@ pub enum ShapeKind {
     },
 }
 
+#[derive(Clone, Copy)]
 pub struct Shape {
     kind: ShapeKind,
     iso: Isometry2<f64>,
     world_iso: Isometry2<f64>,
-    body_handle: Option<BodyHandle>,
+    pub(super) body_handle: Option<BodyHandle>,
     color: [f32; 4],
     ground: bool,
     // cool rust 2018 thingy
@@ -35,7 +36,7 @@ pub struct Shape {
 }
 
 impl Shape {
-    pub fn create(&mut self, world: &mut World<f64>) {
+    pub(super) fn create(&mut self, world: &mut World<f64>) {
         let shape_handle = match self.kind {
             ShapeKind::Circle { radius } => ShapeHandle::new(Ball::new(radius)),
             ShapeKind::Rectangle {
@@ -65,14 +66,14 @@ impl Shape {
         self.body_handle = Some(rigid_body.handle());
     }
 
-    pub fn destroy(&mut self, world: &mut World<f64>) {
+    pub(super) fn destroy(&mut self, world: &mut World<f64>) {
         if let Some(handle) = self.body_handle {
             world.remove_bodies(&[handle]);
             self.body_handle = None;
         }
     }
 
-    pub fn update(&mut self, world: &World<f64>) {
+    pub(super) fn update(&mut self, world: &World<f64>) {
         if let Some(handle) = self.body_handle {
             if let Some(body) = world.rigid_body(handle) {
                 self.world_iso = *body.position();
@@ -80,7 +81,7 @@ impl Shape {
         }
     }
 
-    pub fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
+    pub(super) fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
         let color = if self.selected {
             self.color.shade(0.8)
         } else {
@@ -145,6 +146,29 @@ impl Shape {
                     xf,
                     gfx,
                 );
+            }
+        }
+    }
+
+    pub(super) fn is_point_inside(&self, point: nalgebra::Point2<f64>) -> bool {
+        match self.kind {
+            ShapeKind::Circle { radius } => {
+                let pos = self.iso.translation.vector;
+                point.x >= pos.x - radius
+                    && point.x <= pos.x + radius
+                    && point.y >= pos.y - radius
+                    && point.x <= pos.y + radius
+            }
+            ShapeKind::Rectangle {
+                half_width,
+                half_height,
+            } => {
+                log::trace!("Checking if point is inside rectangle is not implemented yet.");
+                false
+            }
+            ShapeKind::Triangle { p1, p2, p3 } => {
+                log::trace!("Checking if point is inside triangle is not implemented yet.");
+                false
             }
         }
     }
