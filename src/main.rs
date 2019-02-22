@@ -75,8 +75,8 @@ fn main() {
             },
             Event::Loop(e) => match e {
                 Loop::Update(args) => {
-                    let (mut ui, ids) = gui.set_widgets_ids();
                     current_screen.update(args.dt);
+                    let (mut ui, ids) = gui.ui_ids();
                     current_screen.update_gui(&mut ui, ids);
                     window.set_title(format!(
                         "awfulbots | fps: {}, dt: {:.4}",

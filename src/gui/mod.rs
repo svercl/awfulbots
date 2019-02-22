@@ -66,7 +66,7 @@ impl Gui {
         }
     }
 
-    pub fn set_widgets_ids(&mut self) -> (UiCell, &Ids) {
+    pub fn ui_ids(&mut self) -> (UiCell, &Ids) {
         (self.ui.set_widgets(), &self.ids)
     }
 
