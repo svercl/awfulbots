@@ -25,6 +25,8 @@ widget_ids! {
         play_button,
         stop_button,
 
+        shape_count,
+
         canvas,
         text,
 

@@ -403,6 +403,14 @@ impl Screen for GameScreen {
             //     let _ = self.sender.send(ev);
             // }
         }
+
+        widget::Text::new(&format!("Part count: {}", self.parts.len()))
+            .color(color::WHITE)
+            .font_size(12)
+            .parent(ids.canvas)
+            .right_from(ids.extras, BUTTON_MARGIN)
+            .wh([100.0, 20.0])
+            .set(ids.shape_count, ui);
     }
 
     fn draw(&self, ctx: graphics::Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>) {
