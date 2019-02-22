@@ -122,7 +122,7 @@ impl GameScreen {
     }
 
     fn start_action(&mut self, action: ActionKind) {
-        if action == ActionKind::None {
+        if action == ActionKind::None || self.running {
             log::info!("What is that you think you're doing?");
             return;
         }
