@@ -3,7 +3,6 @@ use opengl_graphics::{GlGraphics, GlyphCache, TextureSettings};
 use piston::event_loop::{EventLoop, EventSettings, Events};
 use piston::input::{Button, ButtonArgs, ButtonState, Event, Input, Loop, Motion};
 use piston::window::{AdvancedWindow, WindowSettings};
-use std::sync::mpsc;
 
 mod action;
 mod camera;
@@ -39,12 +38,10 @@ fn main() {
             .build()
             .unwrap();
 
-    let (gui_tx, gui_rx) = mpsc::channel();
-
     let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
     // initialize with the game screen
-    let mut current_screen: Box<Screen> = Box::new(GameScreen::new(camera, gui_rx));
-    let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, gui_tx);
+    let mut current_screen: Box<Screen> = Box::new(GameScreen::new(camera));
+    let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
     let mut gl = GlGraphics::new(opengl);
     let mut glyphs =
@@ -78,8 +75,9 @@ fn main() {
             },
             Event::Loop(e) => match e {
                 Loop::Update(args) => {
+                    let (mut ui, ids) = gui.set_widgets_ids();
                     current_screen.update(args.dt);
-                    gui.update();
+                    current_screen.update_gui(&mut ui, ids);
                     window.set_title(format!(
                         "awfulbots | fps: {}, dt: {:.4}",
                         fps.tick(),

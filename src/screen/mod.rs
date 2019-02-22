@@ -1,3 +1,5 @@
+use crate::gui::Ids;
+use conrod_core::UiCell;
 use graphics::Context;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
@@ -18,6 +20,7 @@ pub enum ScreenTransition {
 pub trait Screen {
     // these MUST be implemented
     fn update(&mut self, dt: f64);
+    fn update_gui(&mut self, _ui: &mut UiCell, _ids: &Ids) {}
     fn draw(&self, ctx: Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>);
 
     // these are optional

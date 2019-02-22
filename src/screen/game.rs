@@ -1,10 +1,14 @@
 use crate::action::ActionKind;
 use crate::camera::Camera;
-use crate::gui::GuiEvent;
+use crate::gui::Ids;
 use crate::limits;
 use crate::part;
 use crate::screen::Screen;
 use crate::util;
+use conrod_core::color::{self, Color};
+use conrod_core::widget::{self, Widget};
+use conrod_core::{Colorable, Labelable, Positionable, Sizeable};
+use conrod_core::{Scalar, UiCell};
 use graphics::Transformed;
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
@@ -12,7 +16,6 @@ use nphysics2d::object::BodyPartHandle;
 use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
-use std::sync::mpsc;
 
 pub struct GameScreen {
     camera: Camera,
@@ -24,7 +27,6 @@ pub struct GameScreen {
     grabbed_object_constraint: Option<ConstraintHandle>,
     middle_mouse_down: bool,
     running: bool,
-    gui_rx: mpsc::Receiver<GuiEvent>,
     current_action: ActionKind,
     current_action_step: u8,
     first_click: Vector2<f64>,
@@ -34,7 +36,7 @@ pub struct GameScreen {
 }
 
 impl GameScreen {
-    pub fn new(camera: Camera, gui_rx: mpsc::Receiver<GuiEvent>) -> Self {
+    pub fn new(camera: Camera) -> Self {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
 
@@ -80,7 +82,6 @@ impl GameScreen {
             grabbed_object_constraint: None,
             middle_mouse_down: false,
             running: false,
-            gui_rx,
             current_action: ActionKind::None,
             current_action_step: 0,
             first_click: nalgebra::zero(),
@@ -119,6 +120,20 @@ impl GameScreen {
             part.destroy(&mut self.world);
         }
     }
+
+    fn start_action(&mut self, action: ActionKind) {
+        if self.current_action == ActionKind::None {
+            log::info!("Not starting a new action, because no action is being done.");
+            return;
+        }
+        log::info!("Starting action: {:?}", action);
+        self.current_action = action;
+        self.current_action_step = 0;
+        self.first_click = nalgebra::zero();
+        self.first_click_world = Point2::origin();
+        self.second_click = nalgebra::zero();
+        self.second_click_world = Point2::origin();
+    }
 }
 
 impl Screen for GameScreen {
@@ -128,32 +143,265 @@ impl Screen for GameScreen {
         for part in &mut self.parts {
             part.update(&self.world);
         }
+    }
 
-        if let Some(e) = self.gui_rx.try_recv().ok() {
-            match e {
-                GuiEvent::CircleClicked if !self.running => {
-                    self.current_action = ActionKind::CreatingCircle
-                }
-                GuiEvent::RectangleClicked if !self.running => {
-                    self.current_action = ActionKind::CreatingRectangle
-                }
-                GuiEvent::TriangleClicked if !self.running => {
-                    self.current_action = ActionKind::CreatingTriangle;
-                }
-                GuiEvent::PlayClicked => self.start(),
-                GuiEvent::StopClicked => self.stop(),
-                f => log::trace!("Got event from GUI: {:?}", f),
-            }
+    fn update_gui(&mut self, ui: &mut UiCell, ids: &Ids) {
+        const MARGIN: f64 = 30.0;
+        const MAIN_BUTTON_COLOR: Color = color::LIGHT_BLUE;
+        const MAIN_BUTTON_WIDTH: Scalar = 80.0;
+        const MAIN_BUTTON_HEIGHT: Scalar = 20.0;
+        const UTILITY_BUTTON_COLOR: Color = color::LIGHT_ORANGE;
+        const BUTTON_MARGIN: Scalar = 5.0;
 
-            if self.current_action != ActionKind::None {
-                // reset the action step and first click
-                self.current_action_step = 0;
-                self.first_click = nalgebra::zero();
-                self.first_click_world = Point2::origin();
-                self.second_click = nalgebra::zero();
-                self.second_click_world = Point2::origin();
-                log::trace!("Starting action: {:?}", self.current_action,);
+        widget::Canvas::new()
+            .color(color::PURPLE)
+            .h(80.0)
+            .top_left()
+            .set(ids.canvas, ui);
+        if widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Circle")
+            .parent(ids.canvas)
+            .top_left_with_margins(BUTTON_MARGIN + 25.0, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.circle_button, ui)
+            .was_clicked()
+        {
+            self.start_action(ActionKind::CreatingCircle);
+        }
+        if widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Rectangle")
+            .parent(ids.canvas)
+            .right_from(ids.circle_button, BUTTON_MARGIN)
+            .wh_of(ids.circle_button)
+            .set(ids.rectangle_button, ui)
+            .was_clicked()
+        {
+            self.start_action(ActionKind::CreatingRectangle);
+        }
+        if widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Triangle")
+            .parent(ids.canvas)
+            .right_from(ids.rectangle_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.triangle_button, ui)
+            .was_clicked()
+        {
+            self.start_action(ActionKind::CreatingTriangle);
+        }
+        widget::Button::new()
+            .color(UTILITY_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Undo")
+            .parent(ids.canvas)
+            .right_from(ids.triangle_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.undo_button, ui);
+        widget::Button::new()
+            .color(UTILITY_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Redo")
+            .parent(ids.canvas)
+            .right_from(ids.undo_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.redo_button, ui);
+
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .down_from(ids.circle_button, BUTTON_MARGIN)
+            .label_font_size(12)
+            .label("Fixed Joint")
+            .parent(ids.canvas)
+            .wh([80.0, 20.0])
+            .set(ids.fixed_joint_button, ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Rotating Joint")
+            .parent(ids.canvas)
+            .right_from(ids.fixed_joint_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.rotating_joint_button, ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Sliding Joint")
+            .parent(ids.canvas)
+            .right_from(ids.rotating_joint_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.sliding_joint_button, ui);
+        widget::Button::new()
+            .color(MAIN_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Text")
+            .parent(ids.canvas)
+            .right_from(ids.sliding_joint_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.text_button, ui);
+        if widget::Button::new()
+            .color(UTILITY_BUTTON_COLOR)
+            .label_font_size(12)
+            .label("Paste")
+            .parent(ids.canvas)
+            .right_from(ids.text_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.paste_button, ui)
+            .was_clicked()
+        {
+            // let _ = self.sender.send(GuiEvent::PasteClicked);
+        }
+
+        if self.running {
+            if widget::Button::new()
+                .color(color::RED)
+                .label_font_size(20)
+                .label("Stop")
+                .parent(ids.canvas)
+                .bottom_right_with_margin(BUTTON_MARGIN)
+                .wh([70.0, 40.0])
+                .set(ids.stop_button, ui)
+                .was_clicked()
+            {
+                self.stop();
             }
+        } else {
+            if widget::Button::new()
+                .color(color::RED)
+                .label_font_size(20)
+                .label("Play!")
+                .parent(ids.canvas)
+                .bottom_right_with_margin(BUTTON_MARGIN)
+                .wh([70.0, 40.0])
+                .set(ids.play_button, ui)
+                .was_clicked()
+            {
+                self.start();
+            }
+        }
+
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Main menu",
+                "Save...",
+                "Load robot",
+                "Load and insert",
+                "Load replay",
+                "Load challenge",
+            ],
+            None,
+        )
+        .label("File")
+        .label_font_size(12)
+        .parent(ids.canvas)
+        .top_left_with_margin(BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(ids.file, ui)
+        {
+            // let ev = match index {
+            //     0 => Some(GuiEvent::FileMainMenuClicked),
+            //     1 => Some(GuiEvent::FileSaveClicked),
+            //     2 => Some(GuiEvent::FileLoadRobotClicked),
+            //     3 => Some(GuiEvent::FileLoadAndInsertClicked),
+            //     4 => Some(GuiEvent::FileLoadReplayClicked),
+            //     5 => Some(GuiEvent::FileLoadChallengeClicked),
+            //     _ => None,
+            // };
+            // if let Some(ev) = ev {
+            //     let _ = self.sender.send(ev);
+            // }
+        }
+
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Change settings",
+                "Clear all",
+                "Undo",
+                "Redo",
+                "Cut",
+                "Copy",
+                "Paste",
+                "Delete",
+                "Move to front",
+                "Move to back",
+            ],
+            None,
+        )
+        .label("Edit")
+        .label_font_size(12)
+        .parent(ids.canvas)
+        .right_from(ids.file, BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(ids.edit, ui)
+        {
+            // let ev = match index {
+            //     0 => Some(GuiEvent::EditChangeSettingsClicked),
+            //     1 => Some(GuiEvent::EditClearAllClicked),
+            //     2 => Some(GuiEvent::EditUndoClicked),
+            //     3 => Some(GuiEvent::EditRedoClicked),
+            //     4 => Some(GuiEvent::EditCutClicked),
+            //     5 => Some(GuiEvent::EditCopyClicked),
+            //     6 => Some(GuiEvent::EditPasteClicked),
+            //     7 => Some(GuiEvent::EditDeleteClicked),
+            //     8 => Some(GuiEvent::EditMoveToFrontClicked),
+            //     9 => Some(GuiEvent::EditMoveToBackClicked),
+            //     _ => None,
+            // };
+            // if let Some(ev) = ev {
+            //     let _ = self.sender.send(ev);
+            // }
+        }
+
+        // TODO: Add `Snap to center` `Show joints` `Show colors` `Show outlines` `Center on selection`
+        if let Some(index) = widget::DropDownList::new(&["Zoom in", "Zoom out"], None)
+            .label("View")
+            .label_font_size(12)
+            .parent(ids.canvas)
+            .right_from(ids.edit, BUTTON_MARGIN)
+            .wh([100.0, 20.0])
+            .set(ids.view, ui)
+        {
+            // let ev = match index {
+            //     0 => Some(GuiEvent::ViewZoomInClicked),
+            //     1 => Some(GuiEvent::ViewZoomOutClicked),
+            //     _ => None,
+            // };
+            // if let Some(ev) = ev {
+            //     let _ = self.sender.send(ev);
+            // }
+        }
+
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Mirror horizontal",
+                "Mirror vertical",
+                "Scale",
+                "Thrusters",
+                "Cannon",
+            ],
+            None,
+        )
+        .label("Extras")
+        .label_font_size(12)
+        .parent(ids.canvas)
+        .right_from(ids.view, BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(ids.extras, ui)
+        {
+            // let ev = match index {
+            //     0 => Some(GuiEvent::ExtrasMirrorHorizontalClicked),
+            //     1 => Some(GuiEvent::ExtrasMirrorVerticalClicked),
+            //     2 => Some(GuiEvent::ExtrasScaleClicked),
+            //     3 => Some(GuiEvent::ExtrasCannonClicked),
+            //     _ => None,
+            // };
+            // if let Some(ev) = ev {
+            //     let _ = self.sender.send(ev);
+            // }
         }
     }
 
