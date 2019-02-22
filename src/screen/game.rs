@@ -122,8 +122,8 @@ impl GameScreen {
     }
 
     fn start_action(&mut self, action: ActionKind) {
-        if self.current_action == ActionKind::None {
-            log::info!("Not starting a new action, because no action is being done.");
+        if action == ActionKind::None {
+            log::info!("What is that you think you're doing?");
             return;
         }
         log::info!("Starting action: {:?}", action);
