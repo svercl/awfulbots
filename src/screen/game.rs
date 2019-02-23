@@ -483,8 +483,8 @@ impl Screen for GameScreen {
                 } else {
                     util::clamp(
                         height,
-                        limits::MIN_RECTANGLE_SIZE,
-                        limits::MAX_RECTANGLE_SIZE,
+                        -limits::MIN_RECTANGLE_SIZE,
+                        -limits::MAX_RECTANGLE_SIZE,
                     )
                 };
                 graphics::Rectangle::new(graphics::color::WHITE).draw(
@@ -649,8 +649,8 @@ impl Screen for GameScreen {
                             } else {
                                 util::clamp(
                                     height,
-                                    limits::MIN_RECTANGLE_SIZE,
-                                    limits::MAX_RECTANGLE_SIZE,
+                                    -limits::MIN_RECTANGLE_SIZE,
+                                    -limits::MAX_RECTANGLE_SIZE,
                                 )
                             };
                             let rectangle = part::ShapeBuilder::rectangle(width, height)
