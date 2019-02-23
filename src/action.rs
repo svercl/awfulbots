@@ -5,4 +5,7 @@ pub enum ActionKind {
     CreatingCircle,
     CreatingRectangle,
     CreatingTriangle,
+    CreatingFixedJoint,
+    CreatingSlidingJoint,
+    CreatingRotatingJoint,
 }

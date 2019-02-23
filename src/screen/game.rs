@@ -12,10 +12,36 @@ use conrod_core::{Scalar, UiCell};
 use graphics::Transformed;
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
-use nphysics2d::object::BodyPartHandle;
+use nphysics2d::object::{BodyHandle, BodyPartHandle};
 use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
+
+struct Action {
+    first_click: Vector2<f64>,
+    first_click_world: Point2<f64>,
+    second_click: Vector2<f64>,
+    second_click_world: Point2<f64>,
+    kind: ActionKind,
+    step: u8,
+    first_body: Option<usize>,
+    second_body: Option<usize>,
+}
+
+impl Default for Action {
+    fn default() -> Self {
+        Action {
+            first_click: nalgebra::zero(),
+            first_click_world: Point2::origin(),
+            second_click: nalgebra::zero(),
+            second_click_world: Point2::origin(),
+            kind: ActionKind::None,
+            step: 0,
+            first_body: None,
+            second_body: None,
+        }
+    }
+}
 
 pub struct GameScreen {
     camera: Camera,
@@ -29,12 +55,7 @@ pub struct GameScreen {
     running: bool,
     dragging_part: bool,
     selected_parts: Vec<usize>,
-    current_action: ActionKind,
-    current_action_step: u8,
-    first_click: Vector2<f64>,
-    first_click_world: Point2<f64>,
-    second_click: Vector2<f64>,
-    second_click_world: Point2<f64>,
+    action: Action,
 }
 
 impl GameScreen {
@@ -86,12 +107,7 @@ impl GameScreen {
             running: false,
             dragging_part: false,
             selected_parts: Vec::new(),
-            current_action: ActionKind::None,
-            current_action_step: 0,
-            first_click: nalgebra::zero(),
-            first_click_world: Point2::origin(),
-            second_click: nalgebra::zero(),
-            second_click_world: Point2::origin(),
+            action: Action::default(),
         }
     }
 
@@ -125,18 +141,18 @@ impl GameScreen {
         }
     }
 
-    fn start_action(&mut self, action: ActionKind) {
-        if action == ActionKind::None || self.running {
+    fn start_action(&mut self, kind: ActionKind) {
+        if kind == ActionKind::None || self.running {
             log::info!("What is that you think you're doing?");
             return;
         }
-        log::info!("Starting action: {:?}", action);
-        self.current_action = action;
-        self.current_action_step = 0;
-        self.first_click = nalgebra::zero();
-        self.first_click_world = Point2::origin();
-        self.second_click = nalgebra::zero();
-        self.second_click_world = Point2::origin();
+        log::info!("Starting action: {:?}", kind);
+        self.action.kind = kind;
+        self.action.step = 0;
+        self.action.first_click = nalgebra::zero();
+        self.action.first_click_world = Point2::origin();
+        self.action.second_click = nalgebra::zero();
+        self.action.second_click_world = Point2::origin();
     }
 }
 
@@ -243,14 +259,18 @@ impl Screen for GameScreen {
             .right_from(ids.fixed_joint_button, BUTTON_MARGIN)
             .wh([80.0, 20.0])
             .set(ids.rotating_joint_button, ui);
-        widget::Button::new()
+        if widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
             .label("Sliding Joint")
             .parent(ids.canvas)
             .right_from(ids.rotating_joint_button, BUTTON_MARGIN)
             .wh([80.0, 20.0])
-            .set(ids.sliding_joint_button, ui);
+            .set(ids.sliding_joint_button, ui)
+            .was_clicked()
+        {
+            self.start_action(ActionKind::CreatingSlidingJoint);
+        }
         widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
             .label_font_size(12)
@@ -542,22 +562,22 @@ impl Screen for GameScreen {
             }
         }
 
-        match self.current_action {
-            ActionKind::CreatingCircle if self.current_action_step == 1 => {
+        match self.action.kind {
+            ActionKind::CreatingCircle if self.action.step == 1 => {
                 let radius =
-                    nalgebra::distance(&self.mouse_position_world, &self.first_click_world);
+                    nalgebra::distance(&self.mouse_position_world, &self.action.first_click_world);
                 let radius = util::clamp(radius, limits::MIN_CIRCLE_SIZE, limits::MAX_CIRCLE_SIZE);
                 graphics::Ellipse::new(graphics::color::WHITE).draw(
                     [-radius, -radius, radius * 2.0, radius * 2.0],
                     &graphics::DrawState::default(),
-                    ctx.trans(self.first_click.x, self.first_click.y)
+                    ctx.trans(self.action.first_click.x, self.action.first_click.y)
                         .zoom(self.camera.zoom())
                         .transform,
                     gfx,
                 );
             }
-            ActionKind::CreatingRectangle if self.current_action_step == 1 => {
-                let width = self.mouse_position_world.x - self.first_click_world.x;
+            ActionKind::CreatingRectangle if self.action.step == 1 => {
+                let width = self.mouse_position_world.x - self.action.first_click_world.x;
                 let width = if width > 0.0 {
                     util::clamp(
                         width,
@@ -571,7 +591,7 @@ impl Screen for GameScreen {
                         -limits::MAX_RECTANGLE_SIZE,
                     )
                 };
-                let height = self.mouse_position_world.y - self.first_click_world.y;
+                let height = self.mouse_position_world.y - self.action.first_click_world.y;
                 let height = if height > 0.0 {
                     util::clamp(
                         height,
@@ -588,18 +608,18 @@ impl Screen for GameScreen {
                 graphics::Rectangle::new(graphics::color::WHITE).draw(
                     [-width, -height, width * 2.0, height * 2.0],
                     &graphics::DrawState::default(),
-                    ctx.trans(self.first_click.x, self.first_click.y)
+                    ctx.trans(self.action.first_click.x, self.action.first_click.y)
                         .zoom(self.camera.zoom())
                         .transform,
                     gfx,
                 );
             }
             ActionKind::CreatingTriangle => {
-                if self.current_action_step >= 1 {
+                if self.action.step >= 1 {
                     graphics::Line::new(graphics::color::BLACK, 1.0).draw(
                         [
-                            self.first_click.x,
-                            self.first_click.y,
+                            self.action.first_click.x,
+                            self.action.first_click.y,
                             self.mouse_position.x,
                             self.mouse_position.y,
                         ],
@@ -607,13 +627,13 @@ impl Screen for GameScreen {
                         ctx.transform,
                         gfx,
                     );
-                    if self.current_action_step == 2 {
+                    if self.action.step == 2 {
                         graphics::Line::new(graphics::color::BLACK, 1.0).draw(
                             [
-                                self.first_click.x,
-                                self.first_click.y,
-                                self.second_click.x,
-                                self.second_click.y,
+                                self.action.first_click.x,
+                                self.action.first_click.y,
+                                self.action.second_click.x,
+                                self.action.second_click.y,
                             ],
                             &graphics::DrawState::default(),
                             ctx.transform,
@@ -621,8 +641,8 @@ impl Screen for GameScreen {
                         );
                         graphics::Line::new(graphics::color::BLACK, 1.0).draw(
                             [
-                                self.second_click.x,
-                                self.second_click.y,
+                                self.action.second_click.x,
+                                self.action.second_click.y,
                                 self.mouse_position.x,
                                 self.mouse_position.y,
                             ],
@@ -631,6 +651,21 @@ impl Screen for GameScreen {
                             gfx,
                         );
                     }
+                }
+            }
+            ActionKind::CreatingSlidingJoint => {
+                if self.action.step == 1 {
+                    graphics::Line::new(graphics::color::BLACK, 1.0).draw(
+                        [
+                            self.action.first_click.x,
+                            self.action.first_click.y,
+                            self.mouse_position.x,
+                            self.mouse_position.y,
+                        ],
+                        &graphics::DrawState::default(),
+                        ctx.transform,
+                        gfx,
+                    );
                 }
             }
             _ => {}
@@ -682,21 +717,21 @@ impl Screen for GameScreen {
                     self.grabbed_object_constraint = Some(self.world.add_constraint(joint));
                 }
 
-                match self.current_action {
+                match self.action.kind {
                     ActionKind::CreatingCircle => {
-                        if self.current_action_step == 0 {
-                            self.current_action_step += 1;
-                            self.first_click = self.mouse_position;
-                            self.first_click_world = self.mouse_position_world;
+                        if self.action.step == 0 {
+                            self.action.step += 1;
+                            self.action.first_click = self.mouse_position;
+                            self.action.first_click_world = self.mouse_position_world;
                             log::trace!(
                                 "Setting first click to {},{}",
-                                self.first_click.x,
-                                self.first_click.y
+                                self.action.first_click.x,
+                                self.action.first_click.y
                             );
-                        } else if self.current_action_step == 1 {
+                        } else if self.action.step == 1 {
                             let radius = nalgebra::distance(
                                 &self.mouse_position_world,
-                                &self.first_click_world,
+                                &self.action.first_click_world,
                             );
                             let radius = util::clamp(
                                 radius,
@@ -705,25 +740,26 @@ impl Screen for GameScreen {
                             );
                             let circle = part::ShapeBuilder::circle(radius)
                                 // temporary workaround
-                                .position_p(self.first_click_world)
+                                .position_p(self.action.first_click_world)
                                 // .selected(true)
                                 .build();
                             self.parts.push(part::Part::Shape(circle));
-                            self.current_action = ActionKind::None;
+                            self.action.kind = ActionKind::None;
                         }
                     }
                     ActionKind::CreatingRectangle => {
-                        if self.current_action_step == 0 {
-                            self.current_action_step += 1;
-                            self.first_click = self.mouse_position;
-                            self.first_click_world = self.mouse_position_world;
+                        if self.action.step == 0 {
+                            self.action.step += 1;
+                            self.action.first_click = self.mouse_position;
+                            self.action.first_click_world = self.mouse_position_world;
                             log::trace!(
                                 "Setting first click to {},{}",
-                                self.first_click.x,
-                                self.first_click.y
+                                self.action.first_click.x,
+                                self.action.first_click.y
                             );
-                        } else if self.current_action_step == 1 {
-                            let width = self.mouse_position_world.x - self.first_click_world.x;
+                        } else if self.action.step == 1 {
+                            let width =
+                                self.mouse_position_world.x - self.action.first_click_world.x;
                             let width = if width > 0.0 {
                                 util::clamp(
                                     width,
@@ -737,7 +773,8 @@ impl Screen for GameScreen {
                                     -limits::MAX_RECTANGLE_SIZE,
                                 )
                             };
-                            let height = self.mouse_position_world.y - self.first_click_world.y;
+                            let height =
+                                self.mouse_position_world.y - self.action.first_click_world.y;
                             let height = if height > 0.0 {
                                 util::clamp(
                                     height,
@@ -752,41 +789,31 @@ impl Screen for GameScreen {
                                 )
                             };
                             let rectangle = part::ShapeBuilder::rectangle(width, height)
-                                .position_p(self.first_click_world)
+                                .position_p(self.action.first_click_world)
                                 // .selected(true)
                                 .build();
                             self.parts.push(part::Part::Shape(rectangle));
-                            self.current_action = ActionKind::None;
+                            self.action.kind = ActionKind::None;
                         }
                     }
                     ActionKind::CreatingTriangle => {
-                        if self.current_action_step == 0 {
-                            self.current_action_step += 1;
-                            self.first_click = self.mouse_position;
-                            self.first_click_world = self.mouse_position_world;
-                            log::trace!(
-                                "Setting first click to {},{}",
-                                self.first_click.x,
-                                self.first_click.y
-                            );
-                        } else if self.current_action_step == 1 {
-                            self.current_action_step += 1;
-                            self.second_click = self.mouse_position;
-                            self.second_click_world = self.mouse_position_world;
-                            log::trace!(
-                                "Setting second click to {},{}",
-                                self.second_click.x,
-                                self.second_click.y
-                            );
-                        } else if self.current_action_step == 2 {
+                        if self.action.step == 0 {
+                            self.action.step += 1;
+                            self.action.first_click = self.mouse_position;
+                            self.action.first_click_world = self.mouse_position_world;
+                        } else if self.action.step == 1 {
+                            self.action.step += 1;
+                            self.action.second_click = self.mouse_position;
+                            self.action.second_click_world = self.mouse_position_world;
+                        } else if self.action.step == 2 {
                             let triangle = part::ShapeBuilder::triangle(
                                 nalgebra::Vector2::new(
-                                    self.first_click_world.x,
-                                    self.first_click_world.y,
+                                    self.action.first_click_world.x,
+                                    self.action.first_click_world.y,
                                 ),
                                 nalgebra::Vector2::new(
-                                    self.second_click_world.x,
-                                    self.second_click_world.y,
+                                    self.action.second_click_world.x,
+                                    self.action.second_click_world.y,
                                 ),
                                 nalgebra::Vector2::new(
                                     self.mouse_position_world.x,
@@ -796,7 +823,7 @@ impl Screen for GameScreen {
                             // .selected(true)
                             .build();
                             self.parts.push(part::Part::Shape(triangle));
-                            self.current_action = ActionKind::None;
+                            self.action.kind = ActionKind::None;
                         }
                     }
                     _ => {}
