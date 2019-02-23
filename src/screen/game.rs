@@ -214,6 +214,18 @@ impl Screen for GameScreen {
             .right_from(ids.undo_button, BUTTON_MARGIN)
             .wh([60.0, 20.0])
             .set(ids.redo_button, ui);
+        if widget::Button::new()
+            .color(color::LIGHT_RED)
+            .label_font_size(12)
+            .label("Zoom in")
+            .parent(ids.canvas)
+            .right_from(ids.redo_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.zoom_in_button, ui)
+            .was_clicked()
+        {
+            self.zoom_in();
+        }
 
         widget::Button::new()
             .color(MAIN_BUTTON_COLOR)
@@ -258,6 +270,18 @@ impl Screen for GameScreen {
             .was_clicked()
         {
             // let _ = self.sender.send(GuiEvent::PasteClicked);
+        }
+        if widget::Button::new()
+            .color(color::LIGHT_RED)
+            .label_font_size(12)
+            .label("Zoom out")
+            .parent(ids.canvas)
+            .right_from(ids.paste_button, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.zoom_out_button, ui)
+            .was_clicked()
+        {
+            self.zoom_out();
         }
 
         if self.running {
@@ -414,7 +438,81 @@ impl Screen for GameScreen {
             .parent(ids.canvas)
             .right_from(ids.extras, BUTTON_MARGIN)
             .wh([100.0, 20.0])
-            .set(ids.shape_count, ui);
+            .set(ids.part_count_text, ui);
+
+        widget::Canvas::new()
+            .color(color::PURPLE)
+            .wh([100.0, 640.0 - BUTTON_MARGIN * 2.0])
+            .top_left()
+            .down_from(ids.canvas, BUTTON_MARGIN)
+            .set(ids.part_canvas, ui);
+
+        widget::Text::new("Replace me")
+            .font_size(12)
+            .parent(ids.part_canvas)
+            .wh([80.0, 20.0])
+            .mid_top_of(ids.part_canvas)
+            .set(ids.part_name_label, ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Delete")
+            .parent(ids.part_canvas)
+            .down_from(ids.part_name_label, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.part_delete_button, ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Cut")
+            .parent(ids.part_canvas)
+            .down_from(ids.part_delete_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.part_cut_button, ui);
+        widget::Button::new()
+            .color(color::LIGHT_ORANGE)
+            .label_font_size(12)
+            .label("Copy")
+            .parent(ids.part_canvas)
+            .down_from(ids.part_cut_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.part_copy_button, ui);
+        widget::Button::new()
+            .color(color::LIGHT_BLUE)
+            .label_font_size(12)
+            .label("Paste")
+            .parent(ids.part_canvas)
+            .down_from(ids.part_copy_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.part_paste_button, ui);
+        widget::Slider::new(15.0, 1.0, 30.0)
+            .label_font_size(12)
+            .label_color(color::DARK_RED)
+            .label("Density")
+            .parent(ids.part_canvas)
+            .down_from(ids.part_paste_button, BUTTON_MARGIN)
+            .wh([80.0, 20.0])
+            .set(ids.part_density_slider, ui);
+        widget::Toggle::new(true)
+            .parent(ids.part_canvas)
+            .down_from(ids.part_density_slider, BUTTON_MARGIN)
+            .wh([20.0, 20.0])
+            .set(ids.part_collides_toggle, ui);
+        widget::Text::new("Collides")
+            .font_size(12)
+            .right_from(ids.part_collides_toggle, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.part_collides_text, ui);
+        widget::Toggle::new(true)
+            .parent(ids.part_canvas)
+            .down_from(ids.part_collides_toggle, BUTTON_MARGIN)
+            .wh([20.0, 20.0])
+            .set(ids.part_camera_focus_toggle, ui);
+        widget::Text::new("Camera focus")
+            .font_size(12)
+            .right_from(ids.part_camera_focus_toggle, BUTTON_MARGIN)
+            .wh([60.0, 20.0])
+            .set(ids.part_camera_focus_text, ui);
     }
 
     fn draw(&self, ctx: graphics::Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>) {
