@@ -826,6 +826,15 @@ impl Screen for GameScreen {
                             self.action.kind = ActionKind::None;
                         }
                     }
+                    ActionKind::CreatingSlidingJoint => {
+                        if self.action.step == 0 {
+                            self.action.step += 1;
+                            self.action.first_click = self.mouse_position;
+                            self.action.first_click_world = self.mouse_position_world;
+                        } else if self.action.step == 2 {
+
+                        }
+                    }
                     _ => {}
                 }
             }
