@@ -5,7 +5,7 @@ use opengl_graphics::GlGraphics;
 mod joint;
 mod shape;
 
-pub use self::joint::Joint;
+pub use self::joint::{Joint, JointBuilder, JointKind};
 pub use self::shape::{Shape, ShapeBuilder, ShapeKind};
 
 pub enum Part {
