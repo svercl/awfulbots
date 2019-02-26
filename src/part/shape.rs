@@ -40,8 +40,16 @@ impl Shape {
         self.iso
     }
 
+    pub fn world_iso(&self) -> Isometry2<f64> {
+        self.world_iso
+    }
+
     pub fn kind(&self) -> ShapeKind {
         self.kind
+    }
+
+    pub fn color(&self) -> [f32; 4] {
+        self.color
     }
 
     pub(super) fn create(&mut self, world: &mut World<f64>) {
@@ -85,75 +93,6 @@ impl Shape {
         if let Some(handle) = self.body_handle {
             if let Some(body) = world.rigid_body(handle) {
                 self.world_iso = *body.position();
-            }
-        }
-    }
-
-    pub(super) fn draw(&self, camera: &Camera, ctx: Context, gfx: &mut GlGraphics) {
-        let color = if self.selected {
-            self.color.shade(0.8)
-        } else {
-            self.color
-        };
-        let (position, rotation) = if self.body_handle.is_some() {
-            (
-                self.world_iso.translation.vector,
-                self.world_iso.rotation.angle(),
-            )
-        } else {
-            (self.iso.translation.vector, self.iso.rotation.angle())
-        };
-        let position = camera.to_global(position);
-        let xf = ctx
-            .trans(position.x, position.y)
-            .rot_rad(rotation)
-            .zoom(camera.zoom())
-            .transform;
-        match self.kind {
-            ShapeKind::Circle { radius } => {
-                use graphics::ellipse::Border;
-                graphics::Ellipse::new(color)
-                    .border(Border {
-                        color: color.shade(0.5),
-                        radius: 0.1,
-                    })
-                    .resolution(16)
-                    .draw(
-                        [-radius, -radius, radius * 2.0, radius * 2.0],
-                        &graphics::DrawState::default(),
-                        xf,
-                        gfx,
-                    );
-            }
-            ShapeKind::Rectangle {
-                half_width,
-                half_height,
-            } => {
-                use graphics::rectangle::Border;
-                graphics::Rectangle::new(color)
-                    .border(Border {
-                        color: color.shade(0.5),
-                        radius: 0.1,
-                    })
-                    .draw(
-                        [
-                            -half_width,
-                            -half_height,
-                            half_width * 2.0,
-                            half_height * 2.0,
-                        ],
-                        &graphics::DrawState::default(),
-                        xf,
-                        gfx,
-                    );
-            }
-            ShapeKind::Triangle { p1, p2, p3 } => {
-                graphics::Polygon::new(color).draw(
-                    &[[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]],
-                    &graphics::DrawState::default(),
-                    xf,
-                    gfx,
-                );
             }
         }
     }

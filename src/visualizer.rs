@@ -3,8 +3,8 @@ use crate::camera::Camera;
 use crate::limits;
 use crate::part::{Joint, JointKind, Part, Shape, ShapeKind};
 use crate::util;
-use graphics::{Context, Transformed};
-use nalgebra::{Point2, Vector2};
+use graphics::{Colored, Context, Transformed};
+use nalgebra::{Isometry2, Point2, Vector2};
 use nphysics2d::world::World;
 use opengl_graphics::GlGraphics;
 
@@ -133,15 +133,89 @@ impl Visualizer {
         }
     }
 
-    pub fn draw_parts(&self, camera: &Camera, parts: &[Part], ctx: Context, gfx: &mut GlGraphics) {}
-
-    pub fn draw_world(
+    fn draw_shape(
         &self,
         camera: &Camera,
-        world: &World<f64>,
-        parts: &[Part],
-        ctx: &Context,
+        shape: &Shape,
+        running: bool,
+        ctx: Context,
         gfx: &mut GlGraphics,
     ) {
+        let iso = if running {
+            shape.world_iso()
+        } else {
+            shape.iso()
+        };
+        let color = shape.color();
+        let (position, rotation) = (iso.translation.vector, iso.rotation.angle());
+        let position = camera.to_global(position);
+        let xf = ctx
+            .trans(position.x, position.y)
+            .rot_rad(rotation)
+            .zoom(camera.zoom())
+            .transform;
+        match shape.kind() {
+            ShapeKind::Circle { radius } => {
+                use graphics::ellipse::Border;
+                graphics::Ellipse::new(color)
+                    .border(Border {
+                        color: color.shade(0.5),
+                        radius: 0.1,
+                    })
+                    .resolution(16)
+                    .draw(
+                        [-radius, -radius, radius * 2.0, radius * 2.0],
+                        &graphics::DrawState::default(),
+                        xf,
+                        gfx,
+                    );
+            }
+            ShapeKind::Rectangle {
+                half_width,
+                half_height,
+            } => {
+                use graphics::rectangle::Border;
+                graphics::Rectangle::new(color)
+                    .border(Border {
+                        color: color.shade(0.5),
+                        radius: 0.1,
+                    })
+                    .draw(
+                        [
+                            -half_width,
+                            -half_height,
+                            half_width * 2.0,
+                            half_height * 2.0,
+                        ],
+                        &graphics::DrawState::default(),
+                        xf,
+                        gfx,
+                    );
+            }
+            ShapeKind::Triangle { p1, p2, p3 } => {
+                graphics::Polygon::new(color).draw(
+                    &[[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]],
+                    &graphics::DrawState::default(),
+                    xf,
+                    gfx,
+                );
+            }
+        }
+    }
+
+    pub fn draw_parts(
+        &self,
+        camera: &Camera,
+        parts: &[Part],
+        running: bool,
+        ctx: Context,
+        gfx: &mut GlGraphics,
+    ) {
+        for part in parts {
+            match part {
+                Part::Shape(shape) => self.draw_shape(camera, shape, running, ctx, gfx),
+                Part::Joint(_) => {}
+            }
+        }
     }
 }

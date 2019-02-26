@@ -534,31 +534,30 @@ impl Screen for GameScreen {
     }
 
     fn draw(&self, ctx: graphics::Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>) {
-        for part in &self.parts {
-            part.draw(&self.camera, ctx, gfx);
-        }
+        self.visualizer
+            .draw_parts(&self.camera, &self.parts, self.running, ctx, gfx);
 
-        for (_, _, _, manifold) in self.world.collider_world().contact_pairs(true) {
-            for c in manifold.contacts() {
-                let color = if c.contact.depth < 0.0 {
-                    [0.0, 0.0, 1.0, 1.0]
-                } else {
-                    [1.0, 0.0, 0.0, 1.0]
-                };
-                let world1 = self
-                    .camera
-                    .to_global(Vector2::new(c.contact.world1.x, c.contact.world1.y));
-                let world2 = self
-                    .camera
-                    .to_global(Vector2::new(c.contact.world2.x, c.contact.world2.y));
-                graphics::Line::new(color, 1.0).draw(
-                    [world1.x, world1.y, world2.x, world2.y],
-                    &graphics::DrawState::default(),
-                    ctx.transform,
-                    gfx,
-                );
-            }
-        }
+        // for (_, _, _, manifold) in self.world.collider_world().contact_pairs(true) {
+        //     for c in manifold.contacts() {
+        //         let color = if c.contact.depth < 0.0 {
+        //             [0.0, 0.0, 1.0, 1.0]
+        //         } else {
+        //             [1.0, 0.0, 0.0, 1.0]
+        //         };
+        //         let world1 = self
+        //             .camera
+        //             .to_global(Vector2::new(c.contact.world1.x, c.contact.world1.y));
+        //         let world2 = self
+        //             .camera
+        //             .to_global(Vector2::new(c.contact.world2.x, c.contact.world2.y));
+        //         graphics::Line::new(color, 1.0).draw(
+        //             [world1.x, world1.y, world2.x, world2.y],
+        //             &graphics::DrawState::default(),
+        //             ctx.transform,
+        //             gfx,
+        //         );
+        //     }
+        // }
 
         self.visualizer.maybe_draw_action(
             &self.action,

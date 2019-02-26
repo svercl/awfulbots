@@ -21,14 +21,6 @@ impl Part {
         }
     }
 
-    pub fn draw(&self, camera: &Camera, ctx: graphics::Context, gfx: &mut GlGraphics) {
-        match self {
-            Part::Shape(shape) => shape.draw(camera, ctx, gfx),
-            // Part::Joint(joint) => joint.draw(camera, ctx, gfx),
-            _ => {}
-        }
-    }
-
     pub fn create(&mut self, world: &mut World<f64>) {
         match self {
             Part::Shape(shape) => shape.create(world),
