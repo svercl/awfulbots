@@ -1,10 +1,11 @@
-use crate::action::ActionKind;
+use crate::action::{Action, ActionKind};
 use crate::camera::Camera;
 use crate::gui::Ids;
 use crate::limits;
-use crate::part;
+use crate::part::{JointBuilder, Part, ShapeBuilder};
 use crate::screen::Screen;
 use crate::util;
+use crate::visualizer::Visualizer;
 use conrod_core::color::{self, Color};
 use conrod_core::widget::{self, Widget};
 use conrod_core::{Colorable, Labelable, Positionable, Sizeable};
@@ -17,36 +18,10 @@ use nphysics2d::world::World;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::input::{Key, MouseButton};
 
-struct Action {
-    first_click: Vector2<f64>,
-    first_click_world: Point2<f64>,
-    second_click: Vector2<f64>,
-    second_click_world: Point2<f64>,
-    kind: ActionKind,
-    step: u8,
-    first_body: Option<usize>,
-    second_body: Option<usize>,
-}
-
-impl Default for Action {
-    fn default() -> Self {
-        Action {
-            first_click: nalgebra::zero(),
-            first_click_world: Point2::origin(),
-            second_click: nalgebra::zero(),
-            second_click_world: Point2::origin(),
-            kind: ActionKind::None,
-            step: 0,
-            first_body: None,
-            second_body: None,
-        }
-    }
-}
-
 pub struct GameScreen {
     camera: Camera,
     world: World<f64>,
-    parts: Vec<part::Part>,
+    parts: Vec<Part>,
     mouse_position: Vector2<f64>,
     mouse_position_world: Point2<f64>,
     grabbed_object: Option<BodyPartHandle>,
@@ -56,6 +31,7 @@ pub struct GameScreen {
     dragging_part: bool,
     selected_parts: Vec<usize>,
     action: Action,
+    visualizer: Visualizer,
 }
 
 impl GameScreen {
@@ -65,8 +41,8 @@ impl GameScreen {
 
         let mut parts = Vec::new();
 
-        parts.push(part::Part::Shape(
-            part::ShapeBuilder::rectangle(1000.0, 1.0)
+        parts.push(Part::Shape(
+            ShapeBuilder::rectangle(1000.0, 1.0)
                 .position(-Vector2::y())
                 .ground(true)
                 .build(),
@@ -86,8 +62,8 @@ impl GameScreen {
                 let x = fj * 5.0 * rad - centerx;
                 let y = -fi * 5.0 * rad - 0.04 - rad;
 
-                parts.push(part::Part::Shape(
-                    part::ShapeBuilder::circle(rad)
+                parts.push(Part::Shape(
+                    ShapeBuilder::circle(rad)
                         .position(Vector2::new(x, y))
                         .color([rand::random(), rand::random(), rand::random(), 1.0])
                         .build(),
@@ -108,6 +84,7 @@ impl GameScreen {
             dragging_part: false,
             selected_parts: Vec::new(),
             action: Action::default(),
+            visualizer: Visualizer::new(),
         }
     }
 
@@ -147,12 +124,14 @@ impl GameScreen {
             return;
         }
         log::info!("Starting action: {:?}", kind);
-        self.action.kind = kind;
-        self.action.step = 0;
-        self.action.first_click = nalgebra::zero();
-        self.action.first_click_world = Point2::origin();
-        self.action.second_click = nalgebra::zero();
-        self.action.second_click_world = Point2::origin();
+        self.action.reset();
+        self.action.set_kind(kind);
+    }
+
+    fn part_at_point(&self, point: Vector2<f64>) -> Option<usize> {
+        self.parts
+            .iter()
+            .position(|part| part.is_point_inside(Point2::new(point.x, point.y)))
     }
 }
 
@@ -404,23 +383,42 @@ impl Screen for GameScreen {
             // }
         }
 
-        // TODO: Add `Snap to center` `Show joints` `Show colors` `Show outlines` `Center on selection`
-        if let Some(index) = widget::DropDownList::new(&["Zoom in", "Zoom out"], None)
-            .label("View")
-            .label_font_size(12)
-            .parent(ids.canvas)
-            .right_from(ids.edit, BUTTON_MARGIN)
-            .wh([100.0, 20.0])
-            .set(ids.view, ui)
+        if let Some(index) = widget::DropDownList::new(
+            &[
+                "Zoom in",
+                "Zoom out",
+                "Snap to center",
+                "Show joints",
+                "Show colors",
+                "Show outlines",
+                "Center on selection",
+            ],
+            None,
+        )
+        .label("View")
+        .label_font_size(12)
+        .parent(ids.canvas)
+        .right_from(ids.edit, BUTTON_MARGIN)
+        .wh([100.0, 20.0])
+        .set(ids.view, ui)
         {
-            // let ev = match index {
-            //     0 => Some(GuiEvent::ViewZoomInClicked),
-            //     1 => Some(GuiEvent::ViewZoomOutClicked),
-            //     _ => None,
-            // };
-            // if let Some(ev) = ev {
-            //     let _ = self.sender.send(ev);
-            // }
+            match index {
+                // Zoom in
+                0 => {}
+                // Zoom out
+                1 => {}
+                // Snap to center
+                2 => {}
+                // Show joints
+                3 => {}
+                // Show colors
+                4 => {}
+                // Show outlines
+                5 => {}
+                // Center on selection
+                6 => {}
+                _ => {}
+            }
         }
 
         if let Some(index) = widget::DropDownList::new(
@@ -562,114 +560,14 @@ impl Screen for GameScreen {
             }
         }
 
-        match self.action.kind {
-            ActionKind::CreatingCircle if self.action.step == 1 => {
-                let radius =
-                    nalgebra::distance(&self.mouse_position_world, &self.action.first_click_world);
-                let radius = util::clamp(radius, limits::MIN_CIRCLE_SIZE, limits::MAX_CIRCLE_SIZE);
-                graphics::Ellipse::new(graphics::color::WHITE).draw(
-                    [-radius, -radius, radius * 2.0, radius * 2.0],
-                    &graphics::DrawState::default(),
-                    ctx.trans(self.action.first_click.x, self.action.first_click.y)
-                        .zoom(self.camera.zoom())
-                        .transform,
-                    gfx,
-                );
-            }
-            ActionKind::CreatingRectangle if self.action.step == 1 => {
-                let width = self.mouse_position_world.x - self.action.first_click_world.x;
-                let width = if width > 0.0 {
-                    util::clamp(
-                        width,
-                        limits::MIN_RECTANGLE_SIZE,
-                        limits::MAX_RECTANGLE_SIZE,
-                    )
-                } else {
-                    util::clamp(
-                        width,
-                        -limits::MIN_RECTANGLE_SIZE,
-                        -limits::MAX_RECTANGLE_SIZE,
-                    )
-                };
-                let height = self.mouse_position_world.y - self.action.first_click_world.y;
-                let height = if height > 0.0 {
-                    util::clamp(
-                        height,
-                        limits::MIN_RECTANGLE_SIZE,
-                        limits::MAX_RECTANGLE_SIZE,
-                    )
-                } else {
-                    util::clamp(
-                        height,
-                        -limits::MIN_RECTANGLE_SIZE,
-                        -limits::MAX_RECTANGLE_SIZE,
-                    )
-                };
-                graphics::Rectangle::new(graphics::color::WHITE).draw(
-                    [-width, -height, width * 2.0, height * 2.0],
-                    &graphics::DrawState::default(),
-                    ctx.trans(self.action.first_click.x, self.action.first_click.y)
-                        .zoom(self.camera.zoom())
-                        .transform,
-                    gfx,
-                );
-            }
-            ActionKind::CreatingTriangle => {
-                if self.action.step >= 1 {
-                    graphics::Line::new(graphics::color::BLACK, 1.0).draw(
-                        [
-                            self.action.first_click.x,
-                            self.action.first_click.y,
-                            self.mouse_position.x,
-                            self.mouse_position.y,
-                        ],
-                        &graphics::DrawState::default(),
-                        ctx.transform,
-                        gfx,
-                    );
-                    if self.action.step == 2 {
-                        graphics::Line::new(graphics::color::BLACK, 1.0).draw(
-                            [
-                                self.action.first_click.x,
-                                self.action.first_click.y,
-                                self.action.second_click.x,
-                                self.action.second_click.y,
-                            ],
-                            &graphics::DrawState::default(),
-                            ctx.transform,
-                            gfx,
-                        );
-                        graphics::Line::new(graphics::color::BLACK, 1.0).draw(
-                            [
-                                self.action.second_click.x,
-                                self.action.second_click.y,
-                                self.mouse_position.x,
-                                self.mouse_position.y,
-                            ],
-                            &graphics::DrawState::default(),
-                            ctx.transform,
-                            gfx,
-                        );
-                    }
-                }
-            }
-            ActionKind::CreatingSlidingJoint => {
-                if self.action.step == 1 {
-                    graphics::Line::new(graphics::color::BLACK, 1.0).draw(
-                        [
-                            self.action.first_click.x,
-                            self.action.first_click.y,
-                            self.mouse_position.x,
-                            self.mouse_position.y,
-                        ],
-                        &graphics::DrawState::default(),
-                        ctx.transform,
-                        gfx,
-                    );
-                }
-            }
-            _ => {}
-        }
+        self.visualizer.maybe_draw_action(
+            &self.action,
+            &self.camera,
+            self.mouse_position,
+            self.mouse_position_world,
+            ctx,
+            gfx,
+        );
     }
 
     fn key(&mut self, key: Key, pressed: bool) {
@@ -717,49 +615,39 @@ impl Screen for GameScreen {
                     self.grabbed_object_constraint = Some(self.world.add_constraint(joint));
                 }
 
-                match self.action.kind {
+                match self.action.kind() {
                     ActionKind::CreatingCircle => {
-                        if self.action.step == 0 {
-                            self.action.step += 1;
-                            self.action.first_click = self.mouse_position;
-                            self.action.first_click_world = self.mouse_position_world;
-                            log::trace!(
-                                "Setting first click to {},{}",
-                                self.action.first_click.x,
-                                self.action.first_click.y
-                            );
-                        } else if self.action.step == 1 {
+                        if self.action.step() == 0 {
+                            self.action.advance_step();
+                            self.action.set_first_click(self.mouse_position);
+                            self.action.set_first_click_world(self.mouse_position_world);
+                        } else if self.action.step() == 1 {
                             let radius = nalgebra::distance(
                                 &self.mouse_position_world,
-                                &self.action.first_click_world,
+                                &self.action.first_click_world(),
                             );
                             let radius = util::clamp(
                                 radius,
                                 limits::MIN_CIRCLE_SIZE,
                                 limits::MAX_CIRCLE_SIZE,
                             );
-                            let circle = part::ShapeBuilder::circle(radius)
+                            let circle = ShapeBuilder::circle(radius)
                                 // temporary workaround
-                                .position_p(self.action.first_click_world)
+                                .position_p(self.action.first_click_world())
                                 // .selected(true)
                                 .build();
-                            self.parts.push(part::Part::Shape(circle));
-                            self.action.kind = ActionKind::None;
+                            self.parts.push(Part::Shape(circle));
+                            self.action.reset();
                         }
                     }
                     ActionKind::CreatingRectangle => {
-                        if self.action.step == 0 {
-                            self.action.step += 1;
-                            self.action.first_click = self.mouse_position;
-                            self.action.first_click_world = self.mouse_position_world;
-                            log::trace!(
-                                "Setting first click to {},{}",
-                                self.action.first_click.x,
-                                self.action.first_click.y
-                            );
-                        } else if self.action.step == 1 {
+                        if self.action.step() == 0 {
+                            self.action.advance_step();
+                            self.action.set_first_click(self.mouse_position);
+                            self.action.set_first_click_world(self.mouse_position_world);
+                        } else if self.action.step() == 1 {
                             let width =
-                                self.mouse_position_world.x - self.action.first_click_world.x;
+                                self.mouse_position_world.x - self.action.first_click_world().x;
                             let width = if width > 0.0 {
                                 util::clamp(
                                     width,
@@ -774,7 +662,7 @@ impl Screen for GameScreen {
                                 )
                             };
                             let height =
-                                self.mouse_position_world.y - self.action.first_click_world.y;
+                                self.mouse_position_world.y - self.action.first_click_world().y;
                             let height = if height > 0.0 {
                                 util::clamp(
                                     height,
@@ -788,32 +676,33 @@ impl Screen for GameScreen {
                                     -limits::MAX_RECTANGLE_SIZE,
                                 )
                             };
-                            let rectangle = part::ShapeBuilder::rectangle(width, height)
-                                .position_p(self.action.first_click_world)
+                            let rectangle = ShapeBuilder::rectangle(width, height)
+                                .position_p(self.action.first_click_world())
                                 // .selected(true)
                                 .build();
-                            self.parts.push(part::Part::Shape(rectangle));
-                            self.action.kind = ActionKind::None;
+                            self.parts.push(Part::Shape(rectangle));
+                            self.action.reset();
                         }
                     }
                     ActionKind::CreatingTriangle => {
-                        if self.action.step == 0 {
-                            self.action.step += 1;
-                            self.action.first_click = self.mouse_position;
-                            self.action.first_click_world = self.mouse_position_world;
-                        } else if self.action.step == 1 {
-                            self.action.step += 1;
-                            self.action.second_click = self.mouse_position;
-                            self.action.second_click_world = self.mouse_position_world;
-                        } else if self.action.step == 2 {
-                            let triangle = part::ShapeBuilder::triangle(
+                        if self.action.step() == 0 {
+                            self.action.advance_step();
+                            self.action.set_first_click(self.mouse_position);
+                            self.action.set_first_click_world(self.mouse_position_world);
+                        } else if self.action.step() == 1 {
+                            self.action.advance_step();
+                            self.action.set_second_click(self.mouse_position);
+                            self.action
+                                .set_second_click_world(self.mouse_position_world);
+                        } else if self.action.step() == 2 {
+                            let triangle = ShapeBuilder::triangle(
                                 nalgebra::Vector2::new(
-                                    self.action.first_click_world.x,
-                                    self.action.first_click_world.y,
+                                    self.action.first_click_world().x,
+                                    self.action.first_click_world().y,
                                 ),
                                 nalgebra::Vector2::new(
-                                    self.action.second_click_world.x,
-                                    self.action.second_click_world.y,
+                                    self.action.second_click_world().x,
+                                    self.action.second_click_world().y,
                                 ),
                                 nalgebra::Vector2::new(
                                     self.mouse_position_world.x,
@@ -822,17 +711,60 @@ impl Screen for GameScreen {
                             )
                             // .selected(true)
                             .build();
-                            self.parts.push(part::Part::Shape(triangle));
-                            self.action.kind = ActionKind::None;
+                            self.parts.push(Part::Shape(triangle));
+                            self.action.reset();
                         }
                     }
                     ActionKind::CreatingSlidingJoint => {
-                        if self.action.step == 0 {
-                            self.action.step += 1;
-                            self.action.first_click = self.mouse_position;
-                            self.action.first_click_world = self.mouse_position_world;
-                        } else if self.action.step == 2 {
-
+                        if self.action.step() == 0 {
+                            self.action.advance_step();
+                            self.action.set_first_click(self.mouse_position);
+                            self.action.set_first_click_world(self.mouse_position_world);
+                        } else if self.action.step() == 1 {
+                            match (
+                                self.part_at_point(self.action.first_click()),
+                                self.part_at_point(self.mouse_position),
+                            ) {
+                                (Some(part1_index), Some(part2_index)) => {
+                                    log::trace!(
+                                        "Part 1 index: {} part 2 index: {}",
+                                        part1_index,
+                                        part2_index
+                                    );
+                                    match (&self.parts[part1_index], &self.parts[part2_index]) {
+                                        (Part::Shape(shape1), Part::Shape(shape2)) => {
+                                            log::trace!(
+                                                "Part 1 kind: {:?} part 2 kind: {:?}",
+                                                shape1.kind(),
+                                                shape2.kind()
+                                            );
+                                            let pos = shape2.iso().translation.vector;
+                                            let anchor1 = Point2::new(
+                                                self.action.first_click_world().x,
+                                                pos.x,
+                                            );
+                                            let anchor2 = Point2::new(
+                                                self.action.first_click_world().y,
+                                                pos.y,
+                                            );
+                                            let axis = Vector2::new(
+                                                pos.x - self.action.first_click_world().x,
+                                                pos.y - self.action.first_click_world().y,
+                                            );
+                                            let joint = JointBuilder::prismatic(shape1, shape2)
+                                                .anchor1(anchor1)
+                                                .anchor2(anchor2)
+                                                .axis(axis)
+                                                .build();
+                                            self.parts.push(Part::Joint(joint));
+                                            self.action.reset();
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                _ => {}
+                            }
+                            self.action.reset();
                         }
                     }
                     _ => {}

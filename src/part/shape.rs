@@ -7,7 +7,7 @@ use nphysics2d::object::{BodyHandle, BodyStatus, ColliderDesc, RigidBodyDesc};
 use nphysics2d::world::World;
 use opengl_graphics::GlGraphics;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ShapeKind {
     Circle {
         radius: f64,
@@ -36,6 +36,14 @@ pub struct Shape {
 }
 
 impl Shape {
+    pub fn iso(&self) -> Isometry2<f64> {
+        self.iso
+    }
+
+    pub fn kind(&self) -> ShapeKind {
+        self.kind
+    }
+
     pub(super) fn create(&mut self, world: &mut World<f64>) {
         let shape_handle = match self.kind {
             ShapeKind::Circle { radius } => ShapeHandle::new(Ball::new(radius)),

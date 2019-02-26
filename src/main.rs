@@ -11,6 +11,7 @@ mod limits;
 mod part;
 mod screen;
 mod util;
+mod visualizer;
 
 use camera::Camera;
 use gui::Gui;

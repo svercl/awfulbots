@@ -83,10 +83,13 @@ impl JointBuilder {
         }
     }
 
-    pub fn prismatic(shape1: Shape, shape2: Shape) -> Self {
+    pub fn prismatic(shape1: &Shape, shape2: &Shape) -> Self {
         JointBuilder {
             kind: JointKind::Prismatic,
-            shapes: Shapes { shape1, shape2 },
+            shapes: Shapes {
+                shape1: shape1.clone(),
+                shape2: shape2.clone(),
+            },
             anchor1: Point2::origin(),
             anchor2: Point2::origin(),
             axis: nalgebra::zero(),
