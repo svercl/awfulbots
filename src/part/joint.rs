@@ -77,7 +77,9 @@ impl Part for Joint {
     }
 
     fn destroy(&mut self, world: &mut World<f64>) {
-        world.remove_constraint(self.handle.expect("Joint doesn't exist"));
+        if let Some(handle) = self.handle {
+            world.remove_constraint(handle);
+        }
     }
 
     fn is_point_inside(&self, point: Vector2<f64>) -> bool {
