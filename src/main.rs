@@ -37,7 +37,7 @@ fn main() {
             // don't allow resizing
             .resizable(false)
             .build()
-            .unwrap();
+            .expect("Unable to create window");
 
     let camera = Camera::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
     // initialize with the game screen
@@ -45,8 +45,8 @@ fn main() {
     let mut gui = Gui::new(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
     let mut gl = GlGraphics::new(opengl);
-    let mut glyphs =
-        GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new()).unwrap();
+    let mut glyphs = GlyphCache::new("assets/ClearSans-Regular.ttf", (), TextureSettings::new())
+        .expect("Unable to create glyph cache");
 
     // used to track fps
     let mut fps = fps_counter::FPSCounter::new();

@@ -35,16 +35,16 @@ impl Joint {
                 use nalgebra::Unit;
                 use nphysics2d::joint::PrismaticConstraint;
                 let body_part1 = world
-                    .body(self.shapes.shape1.body_handle.unwrap())
-                    .unwrap()
+                    .body(self.shapes.shape1.body_handle.expect("No body on shape1"))
+                    .expect("Body for shape1 doesn't exist")
                     .part(0)
-                    .unwrap()
+                    .expect("Part for shape1 doesn't exist")
                     .part_handle();
                 let body_part2 = world
-                    .body(self.shapes.shape2.body_handle.unwrap())
-                    .unwrap()
+                    .body(self.shapes.shape2.body_handle.expect("No body on shape2"))
+                    .expect("Body for shape2 doesn't exist")
                     .part(0)
-                    .unwrap()
+                    .expect("Part for shape2 doesn't exist")
                     .part_handle();
                 let joint = PrismaticConstraint::new(
                     body_part1,
@@ -59,8 +59,7 @@ impl Joint {
         }
     }
 
-    pub(super) fn destroy(&mut self, world: &mut World<f64>) {
-        world.remove_constraint(self.handle.unwrap());
+        world.remove_constraint(self.handle.expect("Joint doesn't exist"));
     }
 }
 

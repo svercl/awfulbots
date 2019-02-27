@@ -38,7 +38,7 @@ impl Gui {
         let mut ui = UiBuilder::new([width, height]).build();
         ui.fonts
             .insert_from_file("assets/ClearSans-Regular.ttf")
-            .unwrap();
+            .expect("Unable to insert font");
 
         let glyph_cache = GlyphCache::builder()
             .dimensions(width as u32, height as u32)
@@ -49,7 +49,7 @@ impl Gui {
         let text_texture_cache = {
             let buf = vec![128; width as usize * height as usize];
             Texture::from_memory_alpha(&buf, width as u32, height as u32, &TextureSettings::new())
-                .unwrap()
+                .expect("Unable to create texture")
         };
 
         let ids = Ids::new(ui.widget_id_generator());
@@ -108,7 +108,7 @@ impl Gui {
                     offset,
                     size,
                 )
-                .unwrap();
+                .expect("Unable to update texture");
             };
 
         fn texture_from_image<T>(img: &T) -> &T {
