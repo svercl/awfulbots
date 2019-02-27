@@ -21,7 +21,7 @@ use piston::input::{Key, MouseButton};
 pub struct GameScreen {
     camera: Camera,
     world: World<f64>,
-    parts: Vec<Part>,
+    parts: Vec<Box<dyn Part>>,
     mouse_position: Vector2<f64>,
     mouse_position_world: Point2<f64>,
     grabbed_object: Option<BodyPartHandle>,
@@ -39,9 +39,9 @@ impl GameScreen {
         let mut world = World::new();
         world.set_gravity(Vector2::new(0.0, 30.0));
 
-        let mut parts = Vec::new();
+        let mut parts: Vec<Box<dyn Part>> = Vec::new();
 
-        parts.push(Part::Shape(
+        parts.push(Box::new(
             ShapeBuilder::rectangle(1000.0, 1.0)
                 .position(-Vector2::y())
                 .ground(true)
@@ -62,7 +62,7 @@ impl GameScreen {
                 let x = fj * 5.0 * rad - centerx;
                 let y = -fi * 5.0 * rad - 0.04 - rad;
 
-                parts.push(Part::Shape(
+                parts.push(Box::new(
                     ShapeBuilder::circle(rad)
                         .position(Vector2::new(x, y))
                         .color([rand::random(), rand::random(), rand::random(), 1.0])
@@ -128,10 +128,14 @@ impl GameScreen {
         self.action.set_kind(kind);
     }
 
-    fn part_at_point(&self, point: Vector2<f64>) -> Option<usize> {
-        self.parts
-            .iter()
-            .position(|part| part.is_point_inside(Point2::new(point.x, point.y)))
+    fn get_part_at(&self, point: Vector2<f64>) -> Option<usize> {
+        for (i, part) in self.parts.iter().enumerate() {
+            if part.is_point_inside(point) {
+                log::trace!("part found. index: {}", i);
+                return Some(i);
+            }
+        }
+        None
     }
 }
 
@@ -616,156 +620,166 @@ impl Screen for GameScreen {
 
                 match self.action.kind() {
                     ActionKind::CreatingCircle => {
-                        if self.action.step() == 0 {
-                            self.action.advance_step();
-                            self.action.set_first_click(self.mouse_position);
-                            self.action.set_first_click_world(self.mouse_position_world);
-                        } else if self.action.step() == 1 {
-                            let radius = nalgebra::distance(
-                                &self.mouse_position_world,
-                                &self.action.first_click_world(),
-                            );
-                            let radius = util::clamp(
-                                radius,
-                                limits::MIN_CIRCLE_SIZE,
-                                limits::MAX_CIRCLE_SIZE,
-                            );
-                            let circle = ShapeBuilder::circle(radius)
-                                // temporary workaround
-                                .position_p(self.action.first_click_world())
-                                // .selected(true)
-                                .build();
-                            self.parts.push(Part::Shape(circle));
-                            self.action.reset();
+                        match self.action.step() {
+                            0 => {
+                                self.action.advance_step();
+                                self.action.set_first_click(self.mouse_position);
+                                self.action.set_first_click_world(self.mouse_position_world);
+                            }
+                            1 => {
+                                let radius = nalgebra::distance(
+                                    &self.mouse_position_world,
+                                    &self.action.first_click_world(),
+                                );
+                                let radius = util::clamp(
+                                    radius,
+                                    limits::MIN_CIRCLE_SIZE,
+                                    limits::MAX_CIRCLE_SIZE,
+                                );
+                                let circle = ShapeBuilder::circle(radius)
+                                    // temporary workaround
+                                    .position_p(self.action.first_click_world())
+                                    // .selected(true)
+                                    .build();
+                                self.parts.push(Box::new(circle));
+                                self.action.reset();
+                            }
+                            _ => {}
                         }
                     }
                     ActionKind::CreatingRectangle => {
-                        if self.action.step() == 0 {
-                            self.action.advance_step();
-                            self.action.set_first_click(self.mouse_position);
-                            self.action.set_first_click_world(self.mouse_position_world);
-                        } else if self.action.step() == 1 {
-                            let width =
-                                self.mouse_position_world.x - self.action.first_click_world().x;
-                            let width = if width > 0.0 {
-                                util::clamp(
-                                    width,
-                                    limits::MIN_RECTANGLE_SIZE,
-                                    limits::MAX_RECTANGLE_SIZE,
-                                )
-                            } else {
-                                util::clamp(
-                                    width,
-                                    -limits::MIN_RECTANGLE_SIZE,
-                                    -limits::MAX_RECTANGLE_SIZE,
-                                )
-                            };
-                            let height =
-                                self.mouse_position_world.y - self.action.first_click_world().y;
-                            let height = if height > 0.0 {
-                                util::clamp(
-                                    height,
-                                    limits::MIN_RECTANGLE_SIZE,
-                                    limits::MAX_RECTANGLE_SIZE,
-                                )
-                            } else {
-                                util::clamp(
-                                    height,
-                                    -limits::MIN_RECTANGLE_SIZE,
-                                    -limits::MAX_RECTANGLE_SIZE,
-                                )
-                            };
-                            let rectangle = ShapeBuilder::rectangle(width, height)
-                                .position_p(self.action.first_click_world())
-                                // .selected(true)
-                                .build();
-                            self.parts.push(Part::Shape(rectangle));
-                            self.action.reset();
+                        match self.action.step() {
+                            0 => {
+                                self.action.advance_step();
+                                self.action.set_first_click(self.mouse_position);
+                                self.action.set_first_click_world(self.mouse_position_world);
+                            }
+                            1 => {
+                                let width =
+                                    self.mouse_position_world.x - self.action.first_click_world().x;
+                                let width = if width > 0.0 {
+                                    util::clamp(
+                                        width,
+                                        limits::MIN_RECTANGLE_SIZE,
+                                        limits::MAX_RECTANGLE_SIZE,
+                                    )
+                                } else {
+                                    util::clamp(
+                                        width,
+                                        -limits::MIN_RECTANGLE_SIZE,
+                                        -limits::MAX_RECTANGLE_SIZE,
+                                    )
+                                };
+                                let height =
+                                    self.mouse_position_world.y - self.action.first_click_world().y;
+                                let height = if height > 0.0 {
+                                    util::clamp(
+                                        height,
+                                        limits::MIN_RECTANGLE_SIZE,
+                                        limits::MAX_RECTANGLE_SIZE,
+                                    )
+                                } else {
+                                    util::clamp(
+                                        height,
+                                        -limits::MIN_RECTANGLE_SIZE,
+                                        -limits::MAX_RECTANGLE_SIZE,
+                                    )
+                                };
+                                let rectangle = ShapeBuilder::rectangle(width, height)
+                                    .position_p(self.action.first_click_world())
+                                    // .selected(true)
+                                    .build();
+                                self.parts.push(Box::new(rectangle));
+                                self.action.reset();
+                            }
+                            _ => {}
                         }
                     }
                     ActionKind::CreatingTriangle => {
-                        if self.action.step() == 0 {
-                            self.action.advance_step();
-                            self.action.set_first_click(self.mouse_position);
-                            self.action.set_first_click_world(self.mouse_position_world);
-                        } else if self.action.step() == 1 {
-                            self.action.advance_step();
-                            self.action.set_second_click(self.mouse_position);
-                            self.action
-                                .set_second_click_world(self.mouse_position_world);
-                        } else if self.action.step() == 2 {
-                            let triangle = ShapeBuilder::triangle(
-                                nalgebra::Vector2::new(
-                                    self.action.first_click_world().x,
-                                    self.action.first_click_world().y,
-                                ),
-                                nalgebra::Vector2::new(
-                                    self.action.second_click_world().x,
-                                    self.action.second_click_world().y,
-                                ),
-                                nalgebra::Vector2::new(
-                                    self.mouse_position_world.x,
-                                    self.mouse_position_world.y,
-                                ),
-                            )
-                            // .selected(true)
-                            .build();
-                            self.parts.push(Part::Shape(triangle));
-                            self.action.reset();
-                        }
-                    }
-                    ActionKind::CreatingSlidingJoint => {
-                        if self.action.step() == 0 {
-                            self.action.advance_step();
-                            self.action.set_first_click(self.mouse_position);
-                            self.action.set_first_click_world(self.mouse_position_world);
-                        } else if self.action.step() == 1 {
-                            match (
-                                self.part_at_point(self.action.first_click()),
-                                self.part_at_point(self.mouse_position),
-                            ) {
-                                (Some(part1_index), Some(part2_index)) => {
-                                    log::trace!(
-                                        "Part 1 index: {} part 2 index: {}",
-                                        part1_index,
-                                        part2_index
-                                    );
-                                    match (&self.parts[part1_index], &self.parts[part2_index]) {
-                                        (Part::Shape(shape1), Part::Shape(shape2)) => {
-                                            log::trace!(
-                                                "Part 1 kind: {:?} part 2 kind: {:?}",
-                                                shape1.kind(),
-                                                shape2.kind()
-                                            );
-                                            let pos = shape2.iso().translation.vector;
-                                            let anchor1 = Point2::new(
-                                                self.action.first_click_world().x,
-                                                pos.x,
-                                            );
-                                            let anchor2 = Point2::new(
-                                                self.action.first_click_world().y,
-                                                pos.y,
-                                            );
-                                            let axis = Vector2::new(
-                                                pos.x - self.action.first_click_world().x,
-                                                pos.y - self.action.first_click_world().y,
-                                            );
-                                            let joint = JointBuilder::prismatic(shape1, shape2)
-                                                .anchor1(anchor1)
-                                                .anchor2(anchor2)
-                                                .axis(axis)
-                                                .build();
-                                            self.parts.push(Part::Joint(joint));
-                                            self.action.reset();
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                                _ => {}
+                        match self.action.step() {
+                            0 => {
+                                self.action.advance_step();
+                                self.action.set_first_click(self.mouse_position);
+                                self.action.set_first_click_world(self.mouse_position_world);
                             }
-                            self.action.reset();
+                            1 => {
+                                self.action.advance_step();
+                                self.action.set_second_click(self.mouse_position);
+                                self.action
+                                    .set_second_click_world(self.mouse_position_world);
+                            }
+                            2 => {
+                                let triangle = ShapeBuilder::triangle(
+                                    nalgebra::Vector2::new(
+                                        self.action.first_click_world().x,
+                                        self.action.first_click_world().y,
+                                    ),
+                                    nalgebra::Vector2::new(
+                                        self.action.second_click_world().x,
+                                        self.action.second_click_world().y,
+                                    ),
+                                    nalgebra::Vector2::new(
+                                        self.mouse_position_world.x,
+                                        self.mouse_position_world.y,
+                                    ),
+                                )
+                                // .selected(true)
+                                .build();
+                                self.parts.push(Box::new(triangle));
+                                self.action.reset();
+                            }
+                            _ => {}
                         }
                     }
+                    // ActionKind::CreatingSlidingJoint => match self.action.step() {
+                    //     0 => {
+                    //         self.action.advance_step();
+                    //         self.action.set_first_click(self.mouse_position);
+                    //         self.action.set_first_click_world(self.mouse_position_world);
+                    //     }
+                    //     1 => {
+                    //         if let (Some(part1_index), Some(part2_index)) = (
+                    //             self.get_part_at(self.action.first_click()),
+                    //             self.get_part_at(self.mouse_position),
+                    //         ) {
+                    //             match &self.parts[part1_index] {
+                    //                 Part::Shape(s) => log::trace!("Part 1 kind: {:?}", s.kind()),
+                    //                 Part::Joint(j) => log::trace!("Part 1 kind {:?}", j.kind()),
+                    //             }
+                    //             match &self.parts[part2_index] {
+                    //                 Part::Shape(s) => log::trace!("Part 2 kind: {:?}", s.kind()),
+                    //                 Part::Joint(j) => log::trace!("Part 2 kind {:?}", j.kind()),
+                    //             }
+                    //             if let (Part::Shape(shape1), Part::Shape(shape2)) =
+                    //                 (&self.parts[part1_index], &self.parts[part2_index])
+                    //             {
+                    //                 log::trace!(
+                    //                     "Part 1 kind: {:?} part 2 kind: {:?}",
+                    //                     shape1.kind(),
+                    //                     shape2.kind()
+                    //                 );
+                    //                 let pos = shape2.iso().translation.vector;
+                    //                 let anchor1 =
+                    //                     Point2::new(self.action.first_click_world().x, pos.x);
+                    //                 let anchor2 =
+                    //                     Point2::new(self.action.first_click_world().y, pos.y);
+                    //                 let axis = Vector2::new(
+                    //                     pos.x - self.action.first_click_world().x,
+                    //                     pos.y - self.action.first_click_world().y,
+                    //                 );
+                    //                 let joint = JointBuilder::prismatic(shape1, shape2)
+                    //                     .anchor1(anchor1)
+                    //                     .anchor2(anchor2)
+                    //                     .axis(axis)
+                    //                     .build();
+                    //                 self.parts.push(Part::Joint(joint));
+                    //                 self.action.reset();
+                    //             }
+                    //         }
+                    //         self.action.reset();
+                    //     }
+                    //     _ => {}
+                    // },
                     _ => {}
                 }
             }

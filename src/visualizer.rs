@@ -114,20 +114,18 @@ impl Visualizer {
                     }
                 }
             }
-            ActionKind::CreatingSlidingJoint => {
-                if action.step() == 1 {
-                    graphics::Line::new(graphics::color::BLACK, 1.0).draw(
-                        [
-                            action.first_click().x,
-                            action.first_click().y,
-                            mouse_position.x,
-                            mouse_position.y,
-                        ],
-                        &graphics::DrawState::default(),
-                        ctx.transform,
-                        gfx,
-                    );
-                }
+            ActionKind::CreatingSlidingJoint if action.step() == 1 => {
+                graphics::Line::new(graphics::color::BLACK, 1.0).draw(
+                    [
+                        action.first_click().x,
+                        action.first_click().y,
+                        mouse_position.x,
+                        mouse_position.y,
+                    ],
+                    &graphics::DrawState::default(),
+                    ctx.transform,
+                    gfx,
+                );
             }
             _ => {}
         }
@@ -203,18 +201,44 @@ impl Visualizer {
         }
     }
 
+    fn draw_joint(
+        &self,
+        camera: &Camera,
+        joint: &Joint,
+        running: bool,
+        ctx: Context,
+        gfx: &mut GlGraphics,
+    ) {
+        let anchor1 = camera.to_global(Vector2::new(joint.anchor1().x, joint.anchor1().y));
+        let anchor2 = camera.to_global(Vector2::new(joint.anchor2().x, joint.anchor2().y));
+        let xf = ctx.transform;
+        match joint.kind() {
+            JointKind::Prismatic => {
+                graphics::Line::new([1.0, 1.0, 1.0, 1.0], 1.0).draw(
+                    [anchor1.x, anchor1.y, anchor2.x, anchor2.y],
+                    &graphics::DrawState::default(),
+                    xf,
+                    gfx,
+                );
+            }
+            _ => {}
+        }
+    }
+
     pub fn draw_parts(
         &self,
         camera: &Camera,
-        parts: &[Part],
+        parts: &[Box<dyn Part>],
         running: bool,
         ctx: Context,
         gfx: &mut GlGraphics,
     ) {
         for part in parts {
-            match part {
-                Part::Shape(shape) => self.draw_shape(camera, shape, running, ctx, gfx),
-                Part::Joint(_) => {}
+            if let Some(s) = part.as_shape() {
+                self.draw_shape(camera, s, running, ctx, gfx);
+            }
+            if let Some(j) = part.as_joint() {
+                self.draw_joint(camera, j, running, ctx, gfx);
             }
         }
     }

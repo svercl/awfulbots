@@ -1,24 +1,25 @@
 use crate::camera::Camera;
-use crate::part::Shape;
+use crate::part::{Part, Shape};
 use graphics::{Colored, Context, Transformed};
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::ConstraintHandle;
 use nphysics2d::object::BodyHandle;
 use nphysics2d::world::World;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum JointKind {
     Fixed,
     Prismatic,
     Revolute,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug)]
 struct Shapes {
     shape1: Shape,
     shape2: Shape,
 }
 
+#[derive(Debug)]
 pub struct Joint {
     kind: JointKind,
     handle: Option<ConstraintHandle>,
@@ -29,7 +30,23 @@ pub struct Joint {
 }
 
 impl Joint {
-    pub(super) fn create(&mut self, world: &mut World<f64>) {
+    pub fn anchor1(&self) -> Point2<f64> {
+        self.anchor1
+    }
+
+    pub fn anchor2(&self) -> Point2<f64> {
+        self.anchor2
+    }
+
+    pub fn kind(&self) -> JointKind {
+        self.kind
+    }
+}
+
+impl Part for Joint {
+    fn update(&mut self, world: &World<f64>) {}
+
+    fn create(&mut self, world: &mut World<f64>) {
         match self.kind {
             JointKind::Prismatic => {
                 use nalgebra::Unit;
@@ -59,7 +76,16 @@ impl Joint {
         }
     }
 
+    fn destroy(&mut self, world: &mut World<f64>) {
         world.remove_constraint(self.handle.expect("Joint doesn't exist"));
+    }
+
+    fn is_point_inside(&self, point: Vector2<f64>) -> bool {
+        false
+    }
+
+    fn as_joint(&self) -> Option<&Joint> {
+        Some(self)
     }
 }
 
@@ -82,17 +108,18 @@ impl JointBuilder {
         }
     }
 
-    pub fn prismatic(shape1: &Shape, shape2: &Shape) -> Self {
-        JointBuilder {
-            kind: JointKind::Prismatic,
-            shapes: Shapes {
-                shape1: shape1.clone(),
-                shape2: shape2.clone(),
-            },
-            anchor1: Point2::origin(),
-            anchor2: Point2::origin(),
-            axis: nalgebra::zero(),
-        }
+    pub fn prismatic(shape1: Shape, shape2: &Shape) -> Self {
+        // JointBuilder {
+        //     kind: JointKind::Prismatic,
+        //     shapes: Shapes {
+        //         shape1: shape1.clone(),
+        //         shape2: shape2.clone(),
+        //     },
+        //     anchor1: Point2::origin(),
+        //     anchor2: Point2::origin(),
+        //     axis: nalgebra::zero(),
+        // }
+        unimplemented!()
     }
 
     pub fn anchor1(&mut self, anchor1: Point2<f64>) -> &mut Self {
@@ -111,13 +138,14 @@ impl JointBuilder {
     }
 
     pub fn build(&mut self) -> Joint {
-        Joint {
-            kind: self.kind,
-            handle: None,
-            shapes: self.shapes,
-            anchor1: self.anchor1,
-            anchor2: self.anchor2,
-            axis: self.axis,
-        }
+        // Joint {
+        //     kind: self.kind,
+        //     handle: None,
+        //     shapes: self.shapes,
+        //     anchor1: self.anchor1,
+        //     anchor2: self.anchor2,
+        //     axis: self.axis,
+        // }
+        unimplemented!()
     }
 }

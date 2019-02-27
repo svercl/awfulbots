@@ -1,11 +1,9 @@
-use crate::camera::Camera;
+use crate::part::Part;
 use graphics::color;
-use graphics::{Colored, Context, Transformed};
 use nalgebra::{Isometry2, Vector2};
 use ncollide2d::shape::{Ball, Cuboid, ShapeHandle};
 use nphysics2d::object::{BodyHandle, BodyStatus, ColliderDesc, RigidBodyDesc};
 use nphysics2d::world::World;
-use opengl_graphics::GlGraphics;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ShapeKind {
@@ -23,7 +21,7 @@ pub enum ShapeKind {
     },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug)]
 pub struct Shape {
     kind: ShapeKind,
     iso: Isometry2<f64>,
@@ -51,8 +49,18 @@ impl Shape {
     pub fn color(&self) -> [f32; 4] {
         self.color
     }
+}
 
-    pub(super) fn create(&mut self, world: &mut World<f64>) {
+impl Part for Shape {
+    fn update(&mut self, world: &World<f64>) {
+        if let Some(handle) = self.body_handle {
+            if let Some(body) = world.rigid_body(handle) {
+                self.world_iso = *body.position();
+            }
+        }
+    }
+
+    fn create(&mut self, world: &mut World<f64>) {
         let shape_handle = match self.kind {
             ShapeKind::Circle { radius } => ShapeHandle::new(Ball::new(radius)),
             ShapeKind::Rectangle {
@@ -82,42 +90,19 @@ impl Shape {
         self.body_handle = Some(rigid_body.handle());
     }
 
-    pub(super) fn destroy(&mut self, world: &mut World<f64>) {
+    fn destroy(&mut self, world: &mut World<f64>) {
         if let Some(handle) = self.body_handle {
             world.remove_bodies(&[handle]);
             self.body_handle = None;
         }
     }
 
-    pub(super) fn update(&mut self, world: &World<f64>) {
-        if let Some(handle) = self.body_handle {
-            if let Some(body) = world.rigid_body(handle) {
-                self.world_iso = *body.position();
-            }
-        }
+    fn is_point_inside(&self, point: Vector2<f64>) -> bool {
+        true
     }
 
-    pub(super) fn is_point_inside(&self, point: nalgebra::Point2<f64>) -> bool {
-        match self.kind {
-            ShapeKind::Circle { radius } => {
-                let pos = self.iso.translation.vector;
-                point.x >= pos.x - radius
-                    && point.x <= pos.x + radius
-                    && point.y >= pos.y - radius
-                    && point.x <= pos.y + radius
-            }
-            ShapeKind::Rectangle {
-                half_width,
-                half_height,
-            } => {
-                log::trace!("Checking if point is inside rectangle is not implemented yet.");
-                false
-            }
-            ShapeKind::Triangle { p1, p2, p3 } => {
-                log::trace!("Checking if point is inside triangle is not implemented yet.");
-                false
-            }
-        }
+    fn as_shape(&self) -> Option<&Shape> {
+        Some(self)
     }
 }
 
