@@ -25,7 +25,6 @@ pub struct Action {
 
 impl Action {
     pub fn reset(&mut self) {
-        log::trace!("Byebye action");
         self.step = 0;
         self.kind = ActionKind::None;
         self.first_click = nalgebra::zero();
