@@ -1,8 +1,8 @@
 use conrod_core::image::Map;
 use conrod_core::text::rt::Rect;
 use conrod_core::text::GlyphCache;
-use conrod_core::widget::Widget;
 use conrod_core::{Ui, UiBuilder, UiCell};
+use graphics::Context;
 use opengl_graphics::{Format, GlGraphics, Texture, TextureSettings, UpdateTexture};
 use piston::input::GenericEvent;
 
@@ -13,7 +13,6 @@ mod ids;
 
 pub use self::ids::Ids;
 
-// Gui is completely separate from the game
 pub struct Gui {
     // the conrod Ui
     ui: Ui,
@@ -83,7 +82,7 @@ impl Gui {
         }
     }
 
-    pub fn draw(&mut self, ctx: graphics::Context, gfx: &mut GlGraphics) {
+    pub fn draw(&mut self, ctx: Context, gfx: &mut GlGraphics) {
         // Avoid borrowchecker
         let Gui {
             ui,

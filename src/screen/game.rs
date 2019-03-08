@@ -10,7 +10,7 @@ use conrod_core::color::{self, Color};
 use conrod_core::widget::{self, Widget};
 use conrod_core::{Colorable, Labelable, Positionable, Sizeable};
 use conrod_core::{Scalar, UiCell};
-use graphics::Transformed;
+use graphics::{Context, Transformed};
 use nalgebra::{Point2, Vector2};
 use nphysics2d::joint::{ConstraintHandle, MouseConstraint};
 use nphysics2d::object::{BodyHandle, BodyPartHandle};
@@ -140,7 +140,7 @@ impl GameScreen {
 }
 
 impl Screen for GameScreen {
-    fn update(&mut self, dt: f64) {
+    fn update(&mut self, _dt: f64) {
         self.world.step();
 
         for part in &mut self.parts {
@@ -537,7 +537,7 @@ impl Screen for GameScreen {
             .set(ids.part_camera_focus_text, ui);
     }
 
-    fn draw(&self, ctx: graphics::Context, gfx: &mut GlGraphics, glyphs: &mut GlyphCache<'static>) {
+    fn draw(&self, ctx: Context, gfx: &mut GlGraphics, _glyphs: &mut GlyphCache<'static>) {
         self.visualizer
             .draw_parts(&self.camera, &self.parts, self.running, ctx, gfx);
 
@@ -814,26 +814,14 @@ impl Screen for GameScreen {
 
     fn mouse_relative(&mut self, x: f64, y: f64) {
         if self.middle_mouse_down && self.grabbed_object.is_none() {
-            const MAX_MOVEMENT: f64 = 0.2;
-            let x = if x > 0.0 {
-                MAX_MOVEMENT
-            } else if x < 0.0 {
-                -MAX_MOVEMENT
-            } else {
-                x
-            };
-            let y = if y > 0.0 {
-                MAX_MOVEMENT
-            } else if y < 0.0 {
-                -MAX_MOVEMENT
-            } else {
-                y
-            };
+            const MAX_MOVEMENT: f64 = 0.5;
+            let x = util::clamp(x, -MAX_MOVEMENT, MAX_MOVEMENT);
+            let y = util::clamp(y, -MAX_MOVEMENT, MAX_MOVEMENT);
             self.camera.trans(&Vector2::new(x, y));
         }
     }
 
-    fn mouse_scroll(&mut self, x: f64, y: f64) {
+    fn mouse_scroll(&mut self, _x: f64, y: f64) {
         if y < 0.0 {
             self.zoom_out();
         } else {
